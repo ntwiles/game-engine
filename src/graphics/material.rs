@@ -21,7 +21,7 @@ impl Material {
                         resource: wgpu::BindingResource::Sampler(&diffuse_texture.sampler),
                     }
                 ],
-                label: Some("grass_bind_group"),
+                label: Some(&format!("{name} Bind Group")),
             }
         );
 

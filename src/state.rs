@@ -70,11 +70,15 @@ pub struct State {
     pub texture_bind_group_layout: wgpu::BindGroupLayout,
     instance_buffer: wgpu::Buffer,
     instances: Vec<Instance>,
-    is_space_pressed: bool,
+    is_down_pressed: bool,
+    is_left_pressed: bool,
+    is_right_pressed: bool,
+    is_up_pressed: bool,
     pub queue: wgpu::Queue,
     render_pipeline: wgpu::RenderPipeline,
     pub size: winit::dpi::PhysicalSize<u32>,
     pub sprite: Option<Sprite>,
+    pub dude_sprite: Option<Sprite>,
     surface: wgpu::Surface,
 }
 
@@ -236,7 +240,7 @@ impl State {
         });
 
 
-        let camera_controller = camera::CameraController::new(0.1);
+        let camera_controller = camera::CameraController {};
 
         const NUM_INSTANCES_PER_ROW: u32 = 10;
 
@@ -255,7 +259,7 @@ impl State {
             &wgpu::util::BufferInitDescriptor {
                 label: Some("Instance Buffer"),
                 contents: bytemuck::cast_slice(&instance_data),
-                usage: wgpu::BufferUsages::VERTEX,
+                usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
             }
         );
 
@@ -270,11 +274,15 @@ impl State {
             device,
             instance_buffer,
             instances,
-            is_space_pressed: false,
+            is_down_pressed: false,
+            is_left_pressed: false,
+            is_right_pressed: false,
+            is_up_pressed: false,
             queue,
             render_pipeline,
             size,
             sprite: None,
+            dude_sprite: None,
             texture_bind_group_layout,
             surface,
         }
@@ -291,27 +299,68 @@ impl State {
     }
 
     pub fn input(&mut self, event: &WindowEvent) -> bool {
-        self.camera_controller.process_events(event);
-
         match event {
             WindowEvent::KeyboardInput {
                 input:
                     KeyboardInput {
                         state,
-                        virtual_keycode: Some(VirtualKeyCode::Space),
+                        virtual_keycode: Some(keycode),
                         ..
                     },
                 ..
             } => {
-                self.is_space_pressed = *state == ElementState::Pressed;
-                true
+                let is_pressed = *state == ElementState::Pressed;
+
+                match keycode {
+                    VirtualKeyCode::W | VirtualKeyCode::Up => {
+                        self.is_up_pressed = is_pressed;
+                        true
+                    }
+                    VirtualKeyCode::A | VirtualKeyCode::Left => {
+                        self.is_left_pressed = is_pressed;
+                        true
+                    }
+                    VirtualKeyCode::S | VirtualKeyCode::Down => {
+                        self.is_down_pressed = is_pressed;
+                        true
+                    }
+                    VirtualKeyCode::D | VirtualKeyCode::Right => {
+                        self.is_right_pressed = is_pressed;
+                        true
+                    }
+                    _ => false,
+                }
             }
             _ => false,
         }
     }
 
     pub fn update(&mut self) {
-        self.camera_controller.update_camera(&mut self.camera);
+        if self.is_left_pressed {
+            self.instances[0].position.x -= 0.07;
+            let instance_data = self.instances.iter().map(Instance::to_raw).collect::<Vec<_>>();
+            self.queue.write_buffer(&self.instance_buffer, 0, bytemuck::cast_slice(&instance_data) )
+        }
+
+        if self.is_right_pressed {
+            self.instances[0].position.x += 0.07;
+            let instance_data = self.instances.iter().map(Instance::to_raw).collect::<Vec<_>>();
+            self.queue.write_buffer(&self.instance_buffer, 0, bytemuck::cast_slice(&instance_data) )
+        }
+
+        if self.is_up_pressed {
+            self.instances[0].position.y += 0.07;
+            let instance_data = self.instances.iter().map(Instance::to_raw).collect::<Vec<_>>();
+            self.queue.write_buffer(&self.instance_buffer, 0, bytemuck::cast_slice(&instance_data) )
+        }
+
+        if self.is_down_pressed {
+            self.instances[0].position.y -= 0.07;
+            let instance_data = self.instances.iter().map(Instance::to_raw).collect::<Vec<_>>();
+            self.queue.write_buffer(&self.instance_buffer, 0, bytemuck::cast_slice(&instance_data) )
+        }
+
+        self.camera_controller.update_camera(&mut self.camera, self.instances[0].position);
         self.camera_uniform.update_view_proj(&self.camera);
         self.queue.write_buffer(&self.camera_buffer, 0, bytemuck::cast_slice(&[self.camera_uniform]));
     }
@@ -337,13 +386,22 @@ impl State {
             })],
             depth_stencil_attachment: None,
         });
+
         render_pass.set_pipeline(&self.render_pipeline);
         render_pass.set_vertex_buffer(1, self.instance_buffer.slice(..));
 
         if let Some(sprite) = &self.sprite {
             render_pass.draw_sprite_instanced(
                 sprite,
-                0..self.instances.len() as u32, 
+                1..self.instances.len() as u32, 
+                &self.camera_bind_group
+            ); 
+        }
+
+        if let Some(sprite) = &self.dude_sprite {
+            render_pass.draw_sprite_instanced(
+                sprite,
+                0..1,
                 &self.camera_bind_group
             ); 
         }
