@@ -1,6 +1,6 @@
 use std::ops::Range;
 
-use super::{material, mesh};
+use super::{material, mesh, sprite};
 
 const VERTICES: &[mesh::Vertex] = &[
     mesh::Vertex { position: [-0.5, 0.5, 0.0], tex_coords: [0.0, 0.0], },
@@ -31,17 +31,15 @@ impl Sprite {
 }
 
 pub trait DrawSprite<'a> {
-    fn draw_mesh(
+    fn draw_sprite(
         &mut self, 
-        mesh: &'a mesh::Mesh, 
-        material: &'a material::Material, 
+        sprite: &'a sprite::Sprite,
         camera_bind_group: &'a wgpu::BindGroup
     );
 
-    fn draw_mesh_instanced(
+    fn draw_sprite_instanced(
         &mut self,
-        mesh: &'a mesh::Mesh,
-        material: &'a material::Material,
+        sprite: &'a sprite::Sprite,
         instances: Range<u32>,
         camera_bind_group: &'a wgpu::BindGroup,
     );
@@ -51,26 +49,24 @@ impl<'a, 'b> DrawSprite<'b> for wgpu::RenderPass<'a>
 where
     'b: 'a,
 {
-    fn draw_mesh(
+    fn draw_sprite(
         &mut self, 
-        mesh: &'b mesh::Mesh, 
-        material: &'b material::Material,         
+        sprite: &'b sprite::Sprite,   
         camera_bind_group: &'b wgpu::BindGroup,
 ) {
-        self.draw_mesh_instanced(mesh, material, 0..1, camera_bind_group);
+        self.draw_sprite_instanced(sprite, 0..1, camera_bind_group);
     }
 
-    fn draw_mesh_instanced(
+    fn draw_sprite_instanced(
         &mut self,
-        mesh: &'b mesh::Mesh,
-        material: &'b material::Material,
+        sprite: &'b sprite::Sprite,
         instances: Range<u32>,
         camera_bind_group: &'b wgpu::BindGroup,
     ){        
-        self.set_vertex_buffer(0, mesh.vertex_buffer.slice(..));
-        self.set_index_buffer(mesh.index_buffer.slice(..), wgpu::IndexFormat::Uint32);
-        self.set_bind_group(0, &material.bind_group, &[]);
+        self.set_vertex_buffer(0, sprite.mesh.vertex_buffer.slice(..));
+        self.set_index_buffer(sprite.mesh.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
+        self.set_bind_group(0, &sprite.material.bind_group, &[]);
         self.set_bind_group(1, camera_bind_group, &[]);
-        self.draw_indexed(0..mesh.num_elements, 0, instances);
+        self.draw_indexed(0..sprite.mesh.num_elements, 0, instances);
     }
 }

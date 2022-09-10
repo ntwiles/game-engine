@@ -7,18 +7,6 @@ use wgpu::util::DeviceExt;
 
 use crate::{camera, graphics::{sprite::{Sprite, DrawSprite}, material, mesh}, resources };
 
-const VERTICES: &[mesh::Vertex] = &[
-    mesh::Vertex { position: [-0.5, 0.5, 0.0], tex_coords: [0.0, 0.0], },
-    mesh::Vertex { position: [-0.5, -0.5, 0.0], tex_coords: [0.0, 1.0], },
-    mesh::Vertex { position: [0.5, -0.5, 0.0], tex_coords: [1.0, 1.0], }, 
-    mesh::Vertex { position: [0.5, 0.5, 0.0], tex_coords: [1.0, 0.0], }, 
-];
-
-const INDICES: &[u16] = &[
-    0, 1, 3,
-    1, 2, 3
-];
-
 #[repr(C)]
 #[derive(Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
 struct InstanceRaw {
@@ -87,12 +75,8 @@ pub struct State {
     pub queue: wgpu::Queue,
     render_pipeline: wgpu::RenderPipeline,
     pub size: winit::dpi::PhysicalSize<u32>,
-    // pub sprite: Sprite,
+    pub sprite: Sprite,
     surface: wgpu::Surface,
-    vertex_buffer: wgpu::Buffer,
-    index_buffer: wgpu::Buffer,
-    num_indices: u32,
-    diffuse_bind_group: wgpu::BindGroup,
 }
 
 impl State {
@@ -278,49 +262,14 @@ impl State {
 
         let grass_texture = resources::load_texture("grass.png", &device, &queue).await.unwrap();
 
-        // let material = material::Material::new(
-        //     String::from("grass"), 
-        //     &device, 
-        //     &texture_bind_group_layout, 
-        //     grass_texture
-        // );
+        let material = material::Material::new(
+            String::from("grass"), 
+            &device, 
+            &texture_bind_group_layout, 
+            grass_texture
+        );
         
-        // let sprite = Sprite::new(String::from("grass"), material, &device);
-
-        let diffuse_bind_group = device.create_bind_group(
-            &wgpu::BindGroupDescriptor {
-                layout: &texture_bind_group_layout,
-                entries: &[
-                    wgpu::BindGroupEntry {
-                        binding: 0,
-                        resource: wgpu::BindingResource::TextureView(&grass_texture.view),
-                    },
-                    wgpu::BindGroupEntry {
-                        binding: 1,
-                        resource: wgpu::BindingResource::Sampler(&grass_texture.sampler),
-                    }
-                ],
-                label: Some("diffuse_bind_group"),
-            }
-        );
-
-        let vertex_buffer = device.create_buffer_init(
-            &wgpu::util::BufferInitDescriptor {
-                label: Some("Vertex Buffer"),
-                contents: bytemuck::cast_slice(VERTICES),
-                usage: wgpu::BufferUsages::VERTEX,
-            }
-        );
-
-        let index_buffer = device.create_buffer_init(
-            &wgpu::util::BufferInitDescriptor {
-                label: Some("Index Buffer"),
-                contents: bytemuck::cast_slice(INDICES),
-                usage: wgpu::BufferUsages::INDEX,
-            }
-        );
-
-        let num_indices = INDICES.len() as u32;
+        let sprite = Sprite::new(String::from("grass"), material, &device);
 
         Self {
             camera,
@@ -337,13 +286,9 @@ impl State {
             queue,
             render_pipeline,
             size,
-            // sprite,
+            sprite,
             texture_bind_group_layout,
             surface,
-            vertex_buffer,
-            index_buffer,
-            num_indices,
-            diffuse_bind_group
         }
     }
 
@@ -405,21 +350,13 @@ impl State {
             depth_stencil_attachment: None,
         });
         render_pass.set_pipeline(&self.render_pipeline);
-        render_pass.set_bind_group(0, &self.diffuse_bind_group, &[]);
-        render_pass.set_bind_group(1, &self.camera_bind_group, &[]);
-        render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
         render_pass.set_vertex_buffer(1, self.instance_buffer.slice(..));
 
-        render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
-        
-        render_pass.draw_indexed(0..self.num_indices, 0, 0..self.instances.len() as _);
-
-        // render_pass.draw_mesh_instanced(
-        //     &self.sprite.mesh, 
-        //     &self.sprite.material,
-        //     0..self.instances.len() as u32, 
-        //     &self.camera_bind_group
-        // ); 
+        render_pass.draw_sprite_instanced(
+            &self.sprite,
+            0..self.instances.len() as u32, 
+            &self.camera_bind_group
+        ); 
       
         drop(render_pass);
         
