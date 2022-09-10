@@ -9,6 +9,8 @@ use winit::{
     window::{WindowBuilder},
 };
 
+use graphics::{material, sprite};
+
 pub async fn run() {
     env_logger::init();
 
@@ -16,6 +18,17 @@ pub async fn run() {
     let window = WindowBuilder::new().build(&event_loop).unwrap();
 
     let mut state = state::State::new(&window).await;
+
+    let grass_texture = resources::load_texture("grass.png", &state.device, &state.queue).await.unwrap();
+
+    let material = material::Material::new(
+        String::from("grass"), 
+        &state.device, 
+        &state.texture_bind_group_layout, 
+        grass_texture
+    );
+    
+    state.sprite = Some(sprite::Sprite::new(String::from("grass"), material, &state.device));
 
     event_loop.run(move |event, _, control_flow| match event {
         Event::RedrawRequested(window_id) if window_id == window.id() => {

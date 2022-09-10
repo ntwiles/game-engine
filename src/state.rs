@@ -5,7 +5,7 @@ use winit::{
 };
 use wgpu::util::DeviceExt;
 
-use crate::{camera, graphics::{sprite::{Sprite, DrawSprite}, material, mesh}, resources };
+use crate::{camera, graphics::{sprite::{Sprite, DrawSprite}, mesh}, resources };
 
 #[repr(C)]
 #[derive(Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
@@ -58,7 +58,6 @@ impl Instance {
     }
 }
 
-
 pub struct State {
     camera: camera::Camera,
     camera_controller: camera::CameraController,
@@ -75,7 +74,7 @@ pub struct State {
     pub queue: wgpu::Queue,
     render_pipeline: wgpu::RenderPipeline,
     pub size: winit::dpi::PhysicalSize<u32>,
-    pub sprite: Sprite,
+    pub sprite: Option<Sprite>,
     surface: wgpu::Surface,
 }
 
@@ -260,17 +259,6 @@ impl State {
             }
         );
 
-        let grass_texture = resources::load_texture("grass.png", &device, &queue).await.unwrap();
-
-        let material = material::Material::new(
-            String::from("grass"), 
-            &device, 
-            &texture_bind_group_layout, 
-            grass_texture
-        );
-        
-        let sprite = Sprite::new(String::from("grass"), material, &device);
-
         Self {
             camera,
             camera_bind_group, 
@@ -286,7 +274,7 @@ impl State {
             queue,
             render_pipeline,
             size,
-            sprite,
+            sprite: None,
             texture_bind_group_layout,
             surface,
         }
@@ -352,12 +340,14 @@ impl State {
         render_pass.set_pipeline(&self.render_pipeline);
         render_pass.set_vertex_buffer(1, self.instance_buffer.slice(..));
 
-        render_pass.draw_sprite_instanced(
-            &self.sprite,
-            0..self.instances.len() as u32, 
-            &self.camera_bind_group
-        ); 
-      
+        if let Some(sprite) = &self.sprite {
+            render_pass.draw_sprite_instanced(
+                sprite,
+                0..self.instances.len() as u32, 
+                &self.camera_bind_group
+            ); 
+        }
+
         drop(render_pass);
         
         self.queue.submit(std::iter::once(encoder.finish()));

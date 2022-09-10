@@ -37,7 +37,6 @@ pub struct Mesh {
 
 impl Mesh {
     pub fn new(name: String, device: &wgpu::Device, verts: &[Vertex], indices: &[u16]) -> Self { 
-        println!("num verts {}", verts.len());
         let vertex_buffer = device.create_buffer_init(
             &wgpu::util::BufferInitDescriptor {
                 label: Some(&format!("{:?} Vertex Buffer", name)),
@@ -45,8 +44,6 @@ impl Mesh {
                 usage: wgpu::BufferUsages::VERTEX,
             }
         );
-
-        println!("indices len {}", indices.len());
 
         let index_buffer = device.create_buffer_init(
             &wgpu::util::BufferInitDescriptor {
