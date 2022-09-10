@@ -81,8 +81,8 @@ pub struct State {
     config: wgpu::SurfaceConfiguration,
     pub device: wgpu::Device,
     pub texture_bind_group_layout: wgpu::BindGroupLayout,
-    // instance_buffer: wgpu::Buffer,
-    // instances: Vec<Instance>,
+    instance_buffer: wgpu::Buffer,
+    instances: Vec<Instance>,
     is_space_pressed: bool,
     pub queue: wgpu::Queue,
     render_pipeline: wgpu::RenderPipeline,
@@ -91,7 +91,6 @@ pub struct State {
     surface: wgpu::Surface,
     vertex_buffer: wgpu::Buffer,
     index_buffer: wgpu::Buffer,
-    num_vertices: u32,
     num_indices: u32,
     diffuse_bind_group: wgpu::BindGroup,
 }
@@ -224,8 +223,7 @@ impl State {
             vertex: wgpu::VertexState {
                 module: &shader,
                 entry_point: "vs_main",
-                buffers: &[mesh::Vertex::desc()],
-                //buffers: &[mesh::Vertex::desc(), InstanceRaw::desc()],
+                buffers: &[mesh::Vertex::desc(), InstanceRaw::desc()],
             },
             fragment: Some(wgpu::FragmentState {
                 module: &shader,
@@ -257,26 +255,26 @@ impl State {
 
         let camera_controller = camera::CameraController::new(0.1);
 
-        // const NUM_INSTANCES_PER_ROW: u32 = 10;
+        const NUM_INSTANCES_PER_ROW: u32 = 10;
 
-        // let instances = (0..NUM_INSTANCES_PER_ROW).flat_map(|y| {
-        //     (0..NUM_INSTANCES_PER_ROW).map(move |x| {
-        //         let position = cgmath::Vector3 { x: x as f32, y: y as f32, z: 0.0};
-        //         let rotation = cgmath::Quaternion::zero();
+        let instances = (0..NUM_INSTANCES_PER_ROW).flat_map(|y| {
+            (0..NUM_INSTANCES_PER_ROW).map(move |x| {
+                let position = cgmath::Vector3 { x: x as f32, y: y as f32, z: 0.0};
+                let rotation = cgmath::Quaternion::zero();
 
-        //         Instance { position, rotation }
-        //     })
-        // }).collect::<Vec<_>>();
+                Instance { position, rotation }
+            })
+        }).collect::<Vec<_>>();
 
-        // let instance_data = instances.iter().map(Instance::to_raw).collect::<Vec<_>>();
+        let instance_data = instances.iter().map(Instance::to_raw).collect::<Vec<_>>();
 
-        // let instance_buffer = device.create_buffer_init(
-        //     &wgpu::util::BufferInitDescriptor {
-        //         label: Some("Instance Buffer"),
-        //         contents: bytemuck::cast_slice(&instance_data),
-        //         usage: wgpu::BufferUsages::VERTEX,
-        //     }
-        // );
+        let instance_buffer = device.create_buffer_init(
+            &wgpu::util::BufferInitDescriptor {
+                label: Some("Instance Buffer"),
+                contents: bytemuck::cast_slice(&instance_data),
+                usage: wgpu::BufferUsages::VERTEX,
+            }
+        );
 
         let grass_texture = resources::load_texture("grass.png", &device, &queue).await.unwrap();
 
@@ -323,7 +321,6 @@ impl State {
         );
 
         let num_indices = INDICES.len() as u32;
-        let num_vertices = VERTICES.len() as u32;
 
         Self {
             camera,
@@ -334,8 +331,8 @@ impl State {
             clear_color,
             config,
             device,
-            // instance_buffer,
-            // instances,
+            instance_buffer,
+            instances,
             is_space_pressed: false,
             queue,
             render_pipeline,
@@ -346,7 +343,6 @@ impl State {
             vertex_buffer,
             index_buffer,
             num_indices,
-            num_vertices,
             diffuse_bind_group
         }
     }
@@ -412,13 +408,11 @@ impl State {
         render_pass.set_bind_group(0, &self.diffuse_bind_group, &[]);
         render_pass.set_bind_group(1, &self.camera_bind_group, &[]);
         render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
+        render_pass.set_vertex_buffer(1, self.instance_buffer.slice(..));
+
         render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
         
-
-
-        //render_pass.set_vertex_buffer(1, self.instance_buffer.slice(..));
-
-        render_pass.draw_indexed(0..self.num_indices, 0, 0..1);
+        render_pass.draw_indexed(0..self.num_indices, 0, 0..self.instances.len() as _);
 
         // render_pass.draw_mesh_instanced(
         //     &self.sprite.mesh, 
