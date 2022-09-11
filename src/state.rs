@@ -1,66 +1,16 @@
-use cgmath::prelude::*;
+use cgmath::{prelude::*, Quaternion};
 use wgpu::util::DeviceExt;
 use winit::{event::*, window::Window};
 
 use crate::{
     camera, entity,
     graphics::{
-        material, mesh,
+        material,
         sprite::{DrawSprite, Sprite},
+        vertex,
     },
     resources,
 };
-
-// #[repr(C)]
-// #[derive(Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
-// struct InstanceRaw {
-//     model: [[f32; 4]; 4],
-// }
-
-// impl InstanceRaw {
-//     fn desc<'a>() -> wgpu::VertexBufferLayout<'a> {
-//         use std::mem;
-//         wgpu::VertexBufferLayout {
-//             array_stride: mem::size_of::<InstanceRaw>() as wgpu::BufferAddress,
-//             step_mode: wgpu::VertexStepMode::Instance,
-//             attributes: &[
-//                 wgpu::VertexAttribute {
-//                     offset: 0,
-//                     shader_location: 5,
-//                     format: wgpu::VertexFormat::Float32x4,
-//                 },
-//                 wgpu::VertexAttribute {
-//                     offset: mem::size_of::<[f32; 4]>() as wgpu::BufferAddress,
-//                     shader_location: 6,
-//                     format: wgpu::VertexFormat::Float32x4,
-//                 },
-//                 wgpu::VertexAttribute {
-//                     offset: mem::size_of::<[f32; 8]>() as wgpu::BufferAddress,
-//                     shader_location: 7,
-//                     format: wgpu::VertexFormat::Float32x4,
-//                 },
-//                 wgpu::VertexAttribute {
-//                     offset: mem::size_of::<[f32; 12]>() as wgpu::BufferAddress,
-//                     shader_location: 8,
-//                     format: wgpu::VertexFormat::Float32x4,
-//                 },
-//             ],
-//         }
-//     }
-// }
-
-// struct Instance {
-//     position: cgmath::Vector3<f32>,
-//     rotation: cgmath::Quaternion<f32>,
-// }
-
-// impl Instance {
-//     fn to_raw(&self) -> InstanceRaw {
-//         InstanceRaw {
-//             model: (cgmath::Matrix4::from_translation(self.position) * cgmath::Matrix4::from(self.rotation)).into(),
-//         }
-//     }
-// }
 
 pub struct State {
     camera: camera::Camera,
@@ -71,8 +21,6 @@ pub struct State {
     config: wgpu::SurfaceConfiguration,
     pub device: wgpu::Device,
     pub texture_bind_group_layout: wgpu::BindGroupLayout,
-    // instance_buffer: wgpu::Buffer,
-    // instanced_render_pipeline: wgpu::RenderPipeline,
     entities: Vec<entity::Entity>,
     sprites: Vec<Sprite>,
     is_down_pressed: bool,
@@ -210,7 +158,7 @@ impl State {
         let render_pipeline = create_render_pipeline(
             sprite_shader,
             layout,
-            &[mesh::Vertex::desc()],
+            &[vertex::RenderVertex::desc()],
             &device,
             &config,
         );
@@ -231,7 +179,17 @@ impl State {
         let grass_sprite = Sprite::new(String::from("grass"), grass_material, &device);
 
         let entities = (0..NUM_INSTANCES_PER_ROW)
-            .flat_map(|y| (0..NUM_INSTANCES_PER_ROW).map(move |x| entity::Entity { sprite_id: 0 }))
+            .flat_map(|y| {
+                (0..NUM_INSTANCES_PER_ROW).map(move |x| entity::Entity {
+                    position: cgmath::Vector3 {
+                        x: x as f32,
+                        y: y as f32,
+                        z: 0.0,
+                    },
+                    rotation: Quaternion::zero(),
+                    sprite_id: 0,
+                })
+            })
             .collect::<Vec<_>>();
 
         let sprites = vec![grass_sprite];
@@ -245,15 +203,12 @@ impl State {
             config,
             device,
             entities,
-            // instance_buffer,
-            // instances,
             is_down_pressed: false,
             is_left_pressed: false,
             is_right_pressed: false,
             is_up_pressed: false,
             queue,
             render_pipeline,
-            // instanced_render_pipeline,
             size,
             player: None,
             texture_bind_group_layout,
@@ -327,17 +282,18 @@ impl State {
         if let Some(player) = &mut self.player {
             let sprite = &mut self.sprites[player.sprite_id];
 
-            let position = sprite.mesh.get_position();
+            player.position += movement;
 
-            sprite.mesh.set_position(position + movement);
+            let verts =
+                vertex::RenderVertex::new(player.position, player.rotation, &sprite.mesh.verts);
 
             self.queue.write_buffer(
                 &sprite.mesh.vertex_buffer,
                 0,
-                bytemuck::cast_slice(&sprite.mesh.verts),
+                bytemuck::cast_slice(verts.as_slice()),
             );
 
-            self.camera.set_position(position);
+            self.camera.set_position(player.position);
         }
 
         self.camera_uniform.update_view_proj(&self.camera);

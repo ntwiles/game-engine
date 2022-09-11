@@ -1,8 +1,6 @@
-use cgmath::prelude::*;
-
 use std::ops::Range;
 
-use super::{material, mesh, sprite};
+use super::{material, mesh, sprite, vertex};
 
 pub struct Sprite {
     pub material: material::Material,
@@ -11,30 +9,20 @@ pub struct Sprite {
 
 impl Sprite {
     pub fn new(name: String, material: material::Material, device: &wgpu::Device) -> Self {
-        let position = cgmath::Vector3::zero();
-        let rotation = cgmath::Quaternion::zero();
-
-        let transform: [[f32; 4]; 4] =
-            (cgmath::Matrix4::from_translation(position) * cgmath::Matrix4::from(rotation)).into();
-
         let vertices = [
-            mesh::Vertex {
-                transform,
+            vertex::Vertex {
                 position: [-0.5, 0.5, 0.0],
                 tex_coords: [0.0, 0.0],
             },
-            mesh::Vertex {
-                transform,
+            vertex::Vertex {
                 position: [-0.5, -0.5, 0.0],
                 tex_coords: [0.0, 1.0],
             },
-            mesh::Vertex {
-                transform,
+            vertex::Vertex {
                 position: [0.5, -0.5, 0.0],
                 tex_coords: [1.0, 1.0],
             },
-            mesh::Vertex {
-                transform,
+            vertex::Vertex {
                 position: [0.5, 0.5, 0.0],
                 tex_coords: [1.0, 0.0],
             },

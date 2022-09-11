@@ -4,6 +4,7 @@ mod graphics;
 mod resources;
 mod state;
 
+use cgmath::prelude::*;
 use winit::{
     event::*,
     event_loop::{ControlFlow, EventLoop},
@@ -34,6 +35,8 @@ pub async fn run() {
     let dude_sprite = sprite::Sprite::new(String::from("dude"), dude_material, &state.device);
 
     let player = entity::Entity {
+        position: cgmath::Vector3::zero(),
+        rotation: cgmath::Quaternion::zero(),
         sprite_id: state.add_sprite(dude_sprite),
     };
 
