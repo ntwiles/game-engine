@@ -34,6 +34,11 @@ impl Camera {
     pub fn resize(&mut self, width: u32, height: u32) {
         self.aspect = width as f32 / height as f32;
     }
+
+    pub fn set_position(&mut self, target: cgmath::Vector3<f32>) {
+        self.position.x = target.x;
+        self.position.y = target.y;
+    }
 }
 
 #[repr(C)]
@@ -52,15 +57,5 @@ impl CameraUniform {
 
     pub fn update_view_proj(&mut self, camera: &Camera) {
         self.view_proj = camera.build_view_projection_matrix().into();
-    }
-}
-
-// TODO: Remove this controller.
-pub struct CameraController {}
-
-impl CameraController {
-    pub fn update_camera(&self, camera: &mut Camera, target: cgmath::Vector3<f32>) {
-        camera.position.x = target.x;
-        camera.position.y = target.y;
     }
 }

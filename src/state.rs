@@ -60,7 +60,6 @@ impl Instance {
 
 pub struct State {
     camera: camera::Camera,
-    camera_controller: camera::CameraController,
     camera_uniform: camera::CameraUniform,
     camera_buffer: wgpu::Buffer,
     camera_bind_group: wgpu::BindGroup,
@@ -239,9 +238,6 @@ impl State {
             multiview: None,
         });
 
-
-        let camera_controller = camera::CameraController {};
-
         const NUM_INSTANCES_PER_ROW: u32 = 30;
 
         let mut instances = (0..NUM_INSTANCES_PER_ROW).flat_map(|y| {
@@ -274,7 +270,6 @@ impl State {
             camera,
             camera_bind_group, 
             camera_buffer,
-            camera_controller,
             camera_uniform,
             clear_color,
             config,
@@ -356,7 +351,7 @@ impl State {
         let instance_data = self.instances.iter().map(Instance::to_raw).collect::<Vec<_>>();
         self.queue.write_buffer(&self.instance_buffer, 0, bytemuck::cast_slice(&instance_data) );
 
-        self.camera_controller.update_camera(&mut self.camera, self.instances[num_instances - 1].position);
+        self.camera.set_position(self.instances[num_instances - 1].position);
         self.camera_uniform.update_view_proj(&self.camera);
         self.queue.write_buffer(&self.camera_buffer, 0, bytemuck::cast_slice(&[self.camera_uniform]));
     }
