@@ -1,4 +1,5 @@
 mod camera;
+mod entity;
 mod graphics;
 mod resources;
 mod state;
@@ -6,7 +7,7 @@ mod state;
 use winit::{
     event::*,
     event_loop::{ControlFlow, EventLoop},
-    window::{WindowBuilder},
+    window::WindowBuilder,
 };
 
 use graphics::{material, sprite};
@@ -19,30 +20,26 @@ pub async fn run() {
 
     let mut state = state::State::new(&window).await;
 
-    let grass_texture = resources::load_texture("grass.png", &state.device, &state.queue).await.unwrap();
-
-    let grass_material = material::Material::new(
-        String::from("grass"), 
-        &state.device, 
-        &state.texture_bind_group_layout, 
-        grass_texture
-    );
-    
-    let grass_sprite = sprite::Sprite::new(String::from("grass"), grass_material, &state.device);
-
-    let dude_texture = resources::load_texture("dude.png", &state.device, &state.queue).await.unwrap();
+    let dude_texture = resources::load_texture("dude.png", &state.device, &state.queue)
+        .await
+        .unwrap();
 
     let dude_material = material::Material::new(
-        String::from("grass"), 
-        &state.device, 
-        &state.texture_bind_group_layout, 
-        dude_texture
+        String::from("grass"),
+        &state.device,
+        &state.texture_bind_group_layout,
+        dude_texture,
     );
 
     let dude_sprite = sprite::Sprite::new(String::from("dude"), dude_material, &state.device);
 
-    state.sprite = Some(grass_sprite);
-    state.dude_sprite = Some(dude_sprite);
+    let player = entity::Entity {
+        sprite_id: state.add_sprite(dude_sprite),
+    };
+
+    println!("{}", player.sprite_id);
+
+    state.player = Some(player);
 
     event_loop.run(move |event, _, control_flow| match event {
         Event::RedrawRequested(window_id) if window_id == window.id() => {
@@ -59,21 +56,27 @@ pub async fn run() {
         Event::WindowEvent {
             ref event,
             window_id,
-        } if window_id == window.id() => if !state.input(event) { match event {
-            WindowEvent::CloseRequested
-            | WindowEvent::KeyboardInput {
-                input:
-                    KeyboardInput {
-                        state: ElementState::Pressed,
-                        virtual_keycode: Some(VirtualKeyCode::Escape),
+        } if window_id == window.id() => {
+            if !state.input(event) {
+                match event {
+                    WindowEvent::CloseRequested
+                    | WindowEvent::KeyboardInput {
+                        input:
+                            KeyboardInput {
+                                state: ElementState::Pressed,
+                                virtual_keycode: Some(VirtualKeyCode::Escape),
+                                ..
+                            },
                         ..
-                    },
-                ..
-            } => *control_flow = ControlFlow::Exit,
-            WindowEvent::Resized(physical_size) => state.resize(*physical_size),
-            WindowEvent::ScaleFactorChanged { new_inner_size, .. } => state.resize(**new_inner_size),
-            _ => {}
-        }},
+                    } => *control_flow = ControlFlow::Exit,
+                    WindowEvent::Resized(physical_size) => state.resize(*physical_size),
+                    WindowEvent::ScaleFactorChanged { new_inner_size, .. } => {
+                        state.resize(**new_inner_size)
+                    }
+                    _ => {}
+                }
+            }
+        }
         _ => {}
     });
 }
