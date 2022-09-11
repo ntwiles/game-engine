@@ -185,7 +185,7 @@ impl State {
             label: Some("camera_bind_group"),
         });
 
-        let clear_color = wgpu::Color::BLACK;
+        let clear_color = wgpu::Color { r: 0.0, g: 0.2, b: 1.0, a: 1.0 };
 
         let shader_code = resources::load_string("shader.wgsl").await.unwrap();
 
@@ -242,9 +242,9 @@ impl State {
 
         let camera_controller = camera::CameraController {};
 
-        const NUM_INSTANCES_PER_ROW: u32 = 10;
+        const NUM_INSTANCES_PER_ROW: u32 = 30;
 
-        let instances = (0..NUM_INSTANCES_PER_ROW).flat_map(|y| {
+        let mut instances = (0..NUM_INSTANCES_PER_ROW).flat_map(|y| {
             (0..NUM_INSTANCES_PER_ROW).map(move |x| {
                 let position = cgmath::Vector3 { x: x as f32, y: y as f32, z: 0.0};
                 let rotation = cgmath::Quaternion::zero();
@@ -252,6 +252,13 @@ impl State {
                 Instance { position, rotation }
             })
         }).collect::<Vec<_>>();
+
+        let player_instance = Instance { 
+            position: cgmath::Vector3::zero(),
+            rotation: cgmath::Quaternion::zero()
+        };
+
+        instances.push(player_instance);
 
         let instance_data = instances.iter().map(Instance::to_raw).collect::<Vec<_>>();
 
@@ -336,31 +343,20 @@ impl State {
     }
 
     pub fn update(&mut self) {
-        if self.is_left_pressed {
-            self.instances[0].position.x -= 0.07;
-            let instance_data = self.instances.iter().map(Instance::to_raw).collect::<Vec<_>>();
-            self.queue.write_buffer(&self.instance_buffer, 0, bytemuck::cast_slice(&instance_data) )
-        }
+        let mut movement = cgmath::Vector2::zero();
 
-        if self.is_right_pressed {
-            self.instances[0].position.x += 0.07;
-            let instance_data = self.instances.iter().map(Instance::to_raw).collect::<Vec<_>>();
-            self.queue.write_buffer(&self.instance_buffer, 0, bytemuck::cast_slice(&instance_data) )
-        }
+        if self.is_left_pressed { movement.x = -0.07; }
+        else if self.is_right_pressed { movement.x = 0.07; }
 
-        if self.is_up_pressed {
-            self.instances[0].position.y += 0.07;
-            let instance_data = self.instances.iter().map(Instance::to_raw).collect::<Vec<_>>();
-            self.queue.write_buffer(&self.instance_buffer, 0, bytemuck::cast_slice(&instance_data) )
-        }
+        if self.is_up_pressed { movement.y = 0.07; }
+        else if self.is_down_pressed { movement.y = -0.07; }
 
-        if self.is_down_pressed {
-            self.instances[0].position.y -= 0.07;
-            let instance_data = self.instances.iter().map(Instance::to_raw).collect::<Vec<_>>();
-            self.queue.write_buffer(&self.instance_buffer, 0, bytemuck::cast_slice(&instance_data) )
-        }
+        let num_instances = self.instances.len();
+        self.instances[num_instances - 1].position += cgmath::Vector3 { x: movement.x, y: movement.y, z: 0.0 };
+        let instance_data = self.instances.iter().map(Instance::to_raw).collect::<Vec<_>>();
+        self.queue.write_buffer(&self.instance_buffer, 0, bytemuck::cast_slice(&instance_data) );
 
-        self.camera_controller.update_camera(&mut self.camera, self.instances[0].position);
+        self.camera_controller.update_camera(&mut self.camera, self.instances[num_instances - 1].position);
         self.camera_uniform.update_view_proj(&self.camera);
         self.queue.write_buffer(&self.camera_buffer, 0, bytemuck::cast_slice(&[self.camera_uniform]));
     }
@@ -393,15 +389,18 @@ impl State {
         if let Some(sprite) = &self.sprite {
             render_pass.draw_sprite_instanced(
                 sprite,
-                1..self.instances.len() as u32, 
+                0..self.instances.len() as u32 - 1, 
                 &self.camera_bind_group
             ); 
         }
 
+        let start = self.instances.len() - 1;
+        let end = self.instances.len();
+
         if let Some(sprite) = &self.dude_sprite {
             render_pass.draw_sprite_instanced(
                 sprite,
-                0..1,
+                start as u32..end as u32,
                 &self.camera_bind_group
             ); 
         }
