@@ -21,8 +21,6 @@ pub struct State {
     config: wgpu::SurfaceConfiguration,
     pub device: wgpu::Device,
     pub texture_bind_group_layout: wgpu::BindGroupLayout,
-    entities: Vec<entity::Entity>,
-    sprites: Vec<Sprite>,
     is_down_pressed: bool,
     is_left_pressed: bool,
     is_right_pressed: bool,
@@ -31,7 +29,11 @@ pub struct State {
     pub queue: wgpu::Queue,
     render_pipeline: wgpu::RenderPipeline,
     pub size: winit::dpi::PhysicalSize<u32>,
+
     surface: wgpu::Surface,
+
+    materials: Vec<material::Material>,
+    entities: Vec<entity::Entity>,
 }
 
 impl State {
@@ -176,23 +178,28 @@ impl State {
             grass_texture,
         );
 
-        let grass_sprite = Sprite::new(String::from("grass"), grass_material, &device);
+        let materials = vec![grass_material];
 
-        let entities = (0..NUM_INSTANCES_PER_ROW)
-            .flat_map(|y| {
-                (0..NUM_INSTANCES_PER_ROW).map(move |x| entity::Entity {
-                    position: cgmath::Vector3 {
+        let grass_sprite = Sprite::new(String::from("grass"), 0, &device);
+
+        let mut entities = Vec::new();
+
+        for y in 0..NUM_INSTANCES_PER_ROW {
+            for x in 0..NUM_INSTANCES_PER_ROW {
+                let entity = entity::Entity::create(
+                    cgmath::Vector3 {
                         x: x as f32,
                         y: y as f32,
                         z: 0.0,
                     },
-                    rotation: Quaternion::zero(),
-                    sprite_id: 0,
-                })
-            })
-            .collect::<Vec<_>>();
+                    Quaternion::zero(),
+                    grass_sprite.duplicate(&device),
+                    &queue,
+                );
 
-        let sprites = vec![grass_sprite];
+                entities.push(entity);
+            }
+        }
 
         Self {
             camera,
@@ -213,7 +220,7 @@ impl State {
             player: None,
             texture_bind_group_layout,
             surface,
-            sprites,
+            materials,
         }
     }
 
@@ -280,20 +287,8 @@ impl State {
         }
 
         if let Some(player) = &mut self.player {
-            let sprite = &mut self.sprites[player.sprite_id];
-
-            player.position += movement;
-
-            let verts =
-                vertex::RenderVertex::new(player.position, player.rotation, &sprite.mesh.verts);
-
-            self.queue.write_buffer(
-                &sprite.mesh.vertex_buffer,
-                0,
-                bytemuck::cast_slice(verts.as_slice()),
-            );
-
-            self.camera.set_position(player.position);
+            player.move_by(movement, &self.queue);
+            self.camera.set_position(player.get_position());
         }
 
         self.camera_uniform.update_view_proj(&self.camera);
@@ -330,14 +325,19 @@ impl State {
             depth_stencil_attachment: None,
         });
 
-        render_pass.set_pipeline(&self.render_pipeline);
-        render_pass.draw_sprite(&self.sprites[0], &self.camera_bind_group);
-
-        if let Some(player) = &self.player {
-            let sprite = &self.sprites[player.sprite_id];
+        for entity in &self.entities {
+            let material = &self.materials[entity.sprite.material_id];
 
             render_pass.set_pipeline(&self.render_pipeline);
-            render_pass.draw_sprite(sprite, &self.camera_bind_group);
+            render_pass.draw_sprite(&entity.sprite, &material, &self.camera_bind_group);
+        }
+
+        if let Some(player) = &self.player {
+            let sprite = &player.sprite;
+            let material = &self.materials[player.sprite.material_id];
+
+            render_pass.set_pipeline(&self.render_pipeline);
+            render_pass.draw_sprite(sprite, &material, &self.camera_bind_group);
         }
 
         drop(render_pass);
@@ -348,9 +348,9 @@ impl State {
         Ok(())
     }
 
-    pub fn add_sprite(&mut self, sprite: Sprite) -> usize {
-        self.sprites.push(sprite);
-        self.sprites.len() - 1
+    pub fn add_material(&mut self, material: material::Material) -> usize {
+        self.materials.push(material);
+        self.materials.len() - 1
     }
 }
 
