@@ -36,7 +36,6 @@ pub struct State {
 
     materials: Vec<material::Material>,
     entities: Vec<entity::Entity>,
-
     instant: Instant,
 }
 
@@ -334,19 +333,33 @@ impl State {
             depth_stencil_attachment: None,
         });
 
-        for entity in &self.entities {
-            let material = &self.materials[entity.sprite.material_id];
+        render_pass.set_pipeline(&self.render_pipeline);
+        render_pass.set_bind_group(1, &self.camera_bind_group, &[]);
 
-            render_pass.set_pipeline(&self.render_pipeline);
-            render_pass.draw_sprite(&entity.sprite, &material, &self.camera_bind_group);
+        // TODO: This was done as a hacky optimization because all sprites should be
+        // able to use the same index buffer. Find a better way of doing this.
+        if let Some(player) = &self.player {
+            render_pass.set_index_buffer(
+                player.sprite.mesh.index_buffer.slice(..),
+                wgpu::IndexFormat::Uint16,
+            );
+        }
+
+        let mut counter = 0;
+
+        for entity in &self.entities {
+            if counter % 1 == 0 {
+                let material = &self.materials[entity.sprite.material_id];
+                render_pass.draw_sprite(&entity.sprite, &material);
+            }
+            counter += 1;
         }
 
         if let Some(player) = &self.player {
             let sprite = &player.sprite;
             let material = &self.materials[player.sprite.material_id];
 
-            render_pass.set_pipeline(&self.render_pipeline);
-            render_pass.draw_sprite(sprite, &material, &self.camera_bind_group);
+            render_pass.draw_sprite(sprite, &material);
         }
 
         drop(render_pass);
