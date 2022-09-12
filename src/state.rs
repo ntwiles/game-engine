@@ -187,10 +187,9 @@ impl State {
         for y in 0..NUM_INSTANCES_PER_ROW {
             for x in 0..NUM_INSTANCES_PER_ROW {
                 let entity = entity::Entity::create(
-                    cgmath::Vector3 {
+                    cgmath::Vector2 {
                         x: x as f32,
                         y: y as f32,
-                        z: 0.0,
                     },
                     Quaternion::zero(),
                     grass_sprite.duplicate(&device),
@@ -272,7 +271,7 @@ impl State {
     }
 
     pub fn update(&mut self) {
-        let mut movement = cgmath::Vector3::<f32>::zero();
+        let mut movement = cgmath::Vector2::<f32>::zero();
 
         if self.is_left_pressed {
             movement.x = -0.07;

@@ -1,4 +1,3 @@
-
 #[rustfmt::skip]
 pub const OPENGL_TO_WGPU_MATRIX: cgmath::Matrix4<f32> = cgmath::Matrix4::new(
     1.0, 0.0, 0.0, 0.0,
@@ -17,25 +16,29 @@ pub struct Camera {
 
 impl Camera {
     fn build_view_projection_matrix(&self) -> cgmath::Matrix4<f32> {
-        let view = cgmath::Matrix4::look_at_rh(self.position, (self.position.x, self.position.y, 0.0).into(), cgmath::Vector3::unit_y());
-        
-        let proj = cgmath::ortho(
-            -self.scale * self.aspect, 
-            self.scale * self.aspect, 
-            -self.scale, 
-            self.scale, 
-            self.znear, 
-            self.zfar
+        let view = cgmath::Matrix4::look_at_rh(
+            self.position,
+            (self.position.x, self.position.y, 0.0).into(),
+            cgmath::Vector3::unit_y(),
         );
 
-        return OPENGL_TO_WGPU_MATRIX  * proj * view;
+        let proj = cgmath::ortho(
+            -self.scale * self.aspect,
+            self.scale * self.aspect,
+            -self.scale,
+            self.scale,
+            self.znear,
+            self.zfar,
+        );
+
+        return OPENGL_TO_WGPU_MATRIX * proj * view;
     }
 
     pub fn resize(&mut self, width: u32, height: u32) {
         self.aspect = width as f32 / height as f32;
     }
 
-    pub fn set_position(&mut self, target: cgmath::Vector3<f32>) {
+    pub fn set_position(&mut self, target: cgmath::Vector2<f32>) {
         self.position.x = target.x;
         self.position.y = target.y;
     }

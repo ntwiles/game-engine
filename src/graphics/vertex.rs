@@ -17,15 +17,18 @@ pub struct RenderVertex {
 
 impl RenderVertex {
     pub fn new(
-        position: cgmath::Vector3<f32>,
+        position: cgmath::Vector2<f32>,
         rotation: cgmath::Quaternion<f32>,
         verts: &[Vertex],
     ) -> Vec<Self> {
         verts
             .iter()
             .map(|v| {
-                let transform = (cgmath::Matrix4::from_translation(position)
-                    * cgmath::Matrix4::from(rotation))
+                let transform = (cgmath::Matrix4::from_translation(cgmath::Vector3 {
+                    x: position.x,
+                    y: position.y,
+                    z: 0.0,
+                }) * cgmath::Matrix4::from(rotation))
                 .into();
 
                 Self {

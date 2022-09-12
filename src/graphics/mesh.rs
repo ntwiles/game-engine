@@ -19,7 +19,7 @@ impl Mesh {
         verts: &[vertex::Vertex],
         indices: &[u16],
     ) -> Self {
-        let position = cgmath::Vector3::zero();
+        let position = cgmath::Vector2::zero();
         let rotation = cgmath::Quaternion::zero();
 
         let vertex_buffer_data = vertex::RenderVertex::new(position, rotation, verts);
@@ -54,7 +54,7 @@ impl Mesh {
      * This should be removed when sprites/meshes can be loaded from disk instead
      * of being created programmatically. */
     pub fn duplicate(&self, device: &wgpu::Device) -> Self {
-        let position = cgmath::Vector3::zero();
+        let position = cgmath::Vector2::zero();
         let rotation = cgmath::Quaternion::zero();
 
         let vertex_buffer_data =

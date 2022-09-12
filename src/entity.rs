@@ -3,14 +3,14 @@ use cgmath;
 use crate::graphics::{sprite, vertex};
 
 pub struct Entity {
-    position: cgmath::Vector3<f32>,
+    position: cgmath::Vector2<f32>,
     rotation: cgmath::Quaternion<f32>,
     pub sprite: sprite::Sprite,
 }
 
 impl Entity {
     pub fn create(
-        position: cgmath::Vector3<f32>,
+        position: cgmath::Vector2<f32>,
         rotation: cgmath::Quaternion<f32>,
         sprite: sprite::Sprite,
         queue: &wgpu::Queue,
@@ -30,11 +30,11 @@ impl Entity {
         }
     }
 
-    pub fn get_position(&self) -> cgmath::Vector3<f32> {
+    pub fn get_position(&self) -> cgmath::Vector2<f32> {
         self.position
     }
 
-    pub fn move_by(&mut self, offset: cgmath::Vector3<f32>, queue: &wgpu::Queue) {
+    pub fn move_by(&mut self, offset: cgmath::Vector2<f32>, queue: &wgpu::Queue) {
         self.position += offset;
 
         let verts =

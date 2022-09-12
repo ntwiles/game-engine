@@ -37,7 +37,7 @@ pub async fn run() {
     let dude_sprite = sprite::Sprite::new(String::from("dude"), id, &state.device);
 
     let player = entity::Entity::create(
-        cgmath::Vector3::zero(),
+        cgmath::Vector2::zero(),
         cgmath::Quaternion::zero(),
         dude_sprite,
         &state.queue,
