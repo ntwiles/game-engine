@@ -1,3 +1,5 @@
+use std::time::Instant;
+
 use cgmath::{prelude::*, Quaternion};
 use wgpu::util::DeviceExt;
 use winit::{event::*, window::Window};
@@ -34,6 +36,8 @@ pub struct State {
 
     materials: Vec<material::Material>,
     entities: Vec<entity::Entity>,
+
+    instant: Instant,
 }
 
 impl State {
@@ -165,7 +169,7 @@ impl State {
             &surface_config,
         );
 
-        const NUM_INSTANCES_PER_ROW: u32 = 30;
+        const NUM_INSTANCES_PER_ROW: u32 = 100;
 
         let grass_texture = resources::load_texture("grass.png", &device, &queue)
             .await
@@ -220,6 +224,7 @@ impl State {
             texture_bind_group_layout,
             surface,
             materials,
+            instant: Instant::now(),
         }
     }
 
@@ -271,6 +276,11 @@ impl State {
     }
 
     pub fn update(&mut self) {
+        let fps = 1_000_000 / self.instant.elapsed().as_micros();
+        println!("FPS: {}", fps);
+
+        self.instant = Instant::now();
+
         let mut movement = cgmath::Vector2::<f32>::zero();
 
         if self.is_left_pressed {
