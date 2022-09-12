@@ -18,7 +18,7 @@ pub struct State {
     camera_buffer: wgpu::Buffer,
     camera_bind_group: wgpu::BindGroup,
     clear_color: wgpu::Color,
-    config: wgpu::SurfaceConfiguration,
+    surface_config: wgpu::SurfaceConfiguration,
     pub device: wgpu::Device,
     pub texture_bind_group_layout: wgpu::BindGroupLayout,
     is_down_pressed: bool,
@@ -64,7 +64,7 @@ impl State {
             .await
             .unwrap();
 
-        let config = wgpu::SurfaceConfiguration {
+        let surface_config = wgpu::SurfaceConfiguration {
             usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
             format: surface.get_supported_formats(&adapter)[0],
             width: size.width,
@@ -72,7 +72,7 @@ impl State {
             present_mode: wgpu::PresentMode::Fifo,
         };
 
-        surface.configure(&device, &config);
+        surface.configure(&device, &surface_config);
 
         let texture_bind_group_layout =
             device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
@@ -162,7 +162,7 @@ impl State {
             layout,
             &[vertex::RenderVertex::desc()],
             &device,
-            &config,
+            &surface_config,
         );
 
         const NUM_INSTANCES_PER_ROW: u32 = 30;
@@ -206,7 +206,7 @@ impl State {
             camera_buffer,
             camera_uniform,
             clear_color,
-            config,
+            surface_config,
             device,
             entities,
             is_down_pressed: false,
@@ -227,9 +227,9 @@ impl State {
         if new_size.width > 0 && new_size.height > 0 {
             self.camera.resize(new_size.width, new_size.height);
             self.size = new_size;
-            self.config.width = new_size.width;
-            self.config.height = new_size.height;
-            self.surface.configure(&self.device, &self.config);
+            self.surface_config.width = new_size.width;
+            self.surface_config.height = new_size.height;
+            self.surface.configure(&self.device, &self.surface_config);
         }
     }
 
