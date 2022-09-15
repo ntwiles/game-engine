@@ -1,5 +1,6 @@
 use std::time::Instant;
 
+use bytemuck::Zeroable;
 use cgmath::{prelude::*, Quaternion};
 use wgpu::util::DeviceExt;
 use winit::{event::*, window::Window};
@@ -33,9 +34,14 @@ pub struct State {
     pub size: winit::dpi::PhysicalSize<u32>,
 
     surface: wgpu::Surface,
+    pub vertex_buffer: wgpu::Buffer,
+    pub index_buffer: wgpu::Buffer,
 
     materials: Vec<material::Material>,
+
     entities: Vec<entity::Entity>,
+    max_entities: usize,
+
     instant: Instant,
 }
 
@@ -168,8 +174,6 @@ impl State {
             &surface_config,
         );
 
-        const NUM_INSTANCES_PER_ROW: u32 = 100;
-
         let grass_texture = resources::load_texture("grass.png", &device, &queue)
             .await
             .unwrap();
@@ -183,20 +187,44 @@ impl State {
 
         let materials = vec![grass_material];
 
-        let grass_sprite = Sprite::new(String::from("grass"), 0, &device);
+        let grass_sprite = Sprite::new(String::from("grass"), 0);
 
         let mut entities = Vec::new();
+        println!("Creating buffers.");
+
+        const MAX_ENTITIES: usize = 50000;
+
+        const MAX_INDICES: usize = MAX_ENTITIES * 6;
+
+        const NUM_INSTANCES_PER_ROW: u32 = 100;
+
+        let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("Vertex Buffer"),
+            contents: bytemuck::cast_slice(&[vertex::RenderVertex::zeroed(); MAX_ENTITIES]),
+            usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
+        });
+
+        let indices = (0..MAX_INDICES).collect::<Vec<_>>();
+
+        let index_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("Index Buffer"),
+            contents: bytemuck::cast_slice(indices.as_slice()),
+            usage: wgpu::BufferUsages::INDEX | wgpu::BufferUsages::COPY_DST,
+        });
 
         for y in 0..NUM_INSTANCES_PER_ROW {
             for x in 0..NUM_INSTANCES_PER_ROW {
                 let entity = entity::Entity::create(
+                    entities.len(),
                     cgmath::Vector2 {
                         x: x as f32,
                         y: y as f32,
                     },
                     Quaternion::zero(),
-                    grass_sprite.duplicate(&device),
+                    grass_sprite.duplicate(),
                     &queue,
+                    &index_buffer,
+                    &vertex_buffer,
                 );
 
                 entities.push(entity);
@@ -216,6 +244,7 @@ impl State {
             is_left_pressed: false,
             is_right_pressed: false,
             is_up_pressed: false,
+            max_entities: MAX_ENTITIES,
             queue,
             render_pipeline,
             size,
@@ -224,6 +253,8 @@ impl State {
             surface,
             materials,
             instant: Instant::now(),
+            vertex_buffer,
+            index_buffer,
         }
     }
 
@@ -295,7 +326,7 @@ impl State {
         }
 
         if let Some(player) = &mut self.player {
-            player.move_by(movement, &self.queue);
+            player.move_by(movement, &self.queue, &self.vertex_buffer);
             self.camera.set_position(player.get_position());
         }
 
@@ -336,21 +367,15 @@ impl State {
         render_pass.set_pipeline(&self.render_pipeline);
         render_pass.set_bind_group(1, &self.camera_bind_group, &[]);
 
-        // TODO: This was done as a hacky optimization because all sprites should be
-        // able to use the same index buffer. Find a better way of doing this.
-        if let Some(player) = &self.player {
-            render_pass.set_index_buffer(
-                player.sprite.mesh.index_buffer.slice(..),
-                wgpu::IndexFormat::Uint16,
-            );
-        }
+        render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
+        render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
 
         let mut counter = 0;
 
         for entity in &self.entities {
             if counter % 1 == 0 {
                 let material = &self.materials[entity.sprite.material_id];
-                render_pass.draw_sprite(&entity.sprite, &material);
+                render_pass.draw_sprite(&entity.sprite, &material, entity.id);
             }
             counter += 1;
         }
@@ -359,7 +384,7 @@ impl State {
             let sprite = &player.sprite;
             let material = &self.materials[player.sprite.material_id];
 
-            render_pass.draw_sprite(sprite, &material);
+            render_pass.draw_sprite(sprite, &material, player.id);
         }
 
         drop(render_pass);
@@ -373,6 +398,10 @@ impl State {
     pub fn add_material(&mut self, material: material::Material) -> usize {
         self.materials.push(material);
         self.materials.len() - 1
+    }
+
+    pub fn num_entities(&self) -> usize {
+        self.entities.len()
     }
 }
 

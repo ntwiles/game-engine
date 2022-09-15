@@ -32,15 +32,18 @@ pub async fn run() {
         dude_texture,
     );
 
-    let id = state.add_material(dude_material);
+    let material_id = state.add_material(dude_material);
 
-    let dude_sprite = sprite::Sprite::new(String::from("dude"), id, &state.device);
+    let dude_sprite = sprite::Sprite::new(String::from("dude"), material_id);
 
     let player = entity::Entity::create(
+        state.num_entities(),
         cgmath::Vector2::zero(),
         cgmath::Quaternion::zero(),
         dude_sprite,
         &state.queue,
+        &state.index_buffer,
+        &state.vertex_buffer,
     );
 
     state.player = Some(player);
