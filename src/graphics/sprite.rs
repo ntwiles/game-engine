@@ -1,6 +1,6 @@
-use std::{mem, ops::Range};
+use std::ops::Range;
 
-use super::{material, mesh, sprite, vertex};
+use super::{material, mesh, vertex};
 
 pub struct Sprite {
     pub material_id: usize,
@@ -47,16 +47,10 @@ impl Sprite {
 }
 
 pub trait DrawSprite<'a> {
-    fn draw_sprite(
-        &mut self,
-        sprite: &'a sprite::Sprite,
-        material: &'a material::Material,
-        entity_id: usize,
-    );
+    fn draw_sprite(&mut self, material: &'a material::Material, entity_id: usize);
 
     fn draw_sprite_instanced(
         &mut self,
-        sprite: &'a sprite::Sprite,
         material: &'a material::Material,
         entity_id: usize,
         instances: Range<u32>,
@@ -67,18 +61,12 @@ impl<'a, 'b> DrawSprite<'b> for wgpu::RenderPass<'a>
 where
     'b: 'a,
 {
-    fn draw_sprite(
-        &mut self,
-        sprite: &'b sprite::Sprite,
-        material: &'b material::Material,
-        entity_id: usize,
-    ) {
-        self.draw_sprite_instanced(sprite, material, entity_id, 0..sprite.mesh.num_elements);
+    fn draw_sprite(&mut self, material: &'b material::Material, entity_id: usize) {
+        self.draw_sprite_instanced(material, entity_id, 0..1);
     }
 
     fn draw_sprite_instanced(
         &mut self,
-        sprite: &'b sprite::Sprite,
         material: &'b material::Material,
         entity_id: usize,
         instances: Range<u32>,

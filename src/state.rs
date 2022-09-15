@@ -40,7 +40,6 @@ pub struct State {
     materials: Vec<material::Material>,
 
     entities: Vec<entity::Entity>,
-    max_entities: usize,
 
     instant: Instant,
 }
@@ -244,7 +243,6 @@ impl State {
             is_left_pressed: false,
             is_right_pressed: false,
             is_up_pressed: false,
-            max_entities: MAX_ENTITIES,
             queue,
             render_pipeline,
             size,
@@ -375,16 +373,14 @@ impl State {
         for entity in &self.entities {
             if counter % 1 == 0 {
                 let material = &self.materials[entity.sprite.material_id];
-                render_pass.draw_sprite(&entity.sprite, &material, entity.id);
+                render_pass.draw_sprite(&material, entity.id);
             }
             counter += 1;
         }
 
         if let Some(player) = &self.player {
-            let sprite = &player.sprite;
             let material = &self.materials[player.sprite.material_id];
-
-            render_pass.draw_sprite(sprite, &material, player.id);
+            render_pass.draw_sprite(&material, player.id);
         }
 
         drop(render_pass);
