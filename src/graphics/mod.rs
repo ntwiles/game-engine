@@ -10,17 +10,17 @@ use winit::window::Window;
 
 pub struct Graphics {
     pub surface: wgpu::Surface,
-    pub clear_color: wgpu::Color,
+    clear_color: wgpu::Color,
     pub device: wgpu::Device,
-    pub render_pipeline: wgpu::RenderPipeline,
+    render_pipeline: wgpu::RenderPipeline,
     pub vertex_buffer: wgpu::Buffer,
     pub index_buffer: wgpu::Buffer,
     pub queue: wgpu::Queue,
-    pub camera_bind_group: wgpu::BindGroup,
+    camera_bind_group: wgpu::BindGroup,
     pub texture_bind_group_layout: wgpu::BindGroupLayout,
-    pub surface_config: wgpu::SurfaceConfiguration,
-    pub camera_uniform: camera::CameraUniform,
-    pub camera_buffer: wgpu::Buffer,
+    surface_config: wgpu::SurfaceConfiguration,
+    camera_uniform: camera::CameraUniform,
+    camera_buffer: wgpu::Buffer,
 }
 
 use super::sprite::DrawSprite;
@@ -237,6 +237,24 @@ impl Graphics {
         output.present();
 
         Ok(())
+    }
+}
+
+impl Graphics {
+    pub fn update_camera(&mut self, camera: &camera::Camera) {
+        self.camera_uniform.update_view_proj(camera);
+
+        self.queue.write_buffer(
+            &self.camera_buffer,
+            0,
+            bytemuck::cast_slice(&[self.camera_uniform]),
+        );
+    }
+
+    pub fn resize(&mut self, new_size: winit::dpi::PhysicalSize<u32>) {
+        self.surface_config.width = new_size.width;
+        self.surface_config.height = new_size.height;
+        self.surface.configure(&self.device, &self.surface_config);
     }
 }
 

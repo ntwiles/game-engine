@@ -103,11 +103,7 @@ impl State {
         if new_size.width > 0 && new_size.height > 0 {
             self.camera.resize(new_size.width, new_size.height);
             self.size = new_size;
-            self.graphics.surface_config.width = new_size.width;
-            self.graphics.surface_config.height = new_size.height;
-            self.graphics
-                .surface
-                .configure(&self.graphics.device, &self.graphics.surface_config);
+            self.graphics.resize(new_size);
         }
     }
 
@@ -168,12 +164,7 @@ impl State {
             self.camera.set_position(player.get_position());
         }
 
-        self.graphics.camera_uniform.update_view_proj(&self.camera);
-        self.graphics.queue.write_buffer(
-            &self.graphics.camera_buffer,
-            0,
-            bytemuck::cast_slice(&[self.graphics.camera_uniform]),
-        );
+        self.graphics.update_camera(&self.camera);
     }
 
     pub fn render(&mut self) -> Result<(), wgpu::SurfaceError> {
