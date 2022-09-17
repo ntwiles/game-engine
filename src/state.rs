@@ -1,41 +1,23 @@
 use std::{collections::LinkedList, time::Instant};
 
-use bytemuck::Zeroable;
 use cgmath::{prelude::*, Quaternion};
-use wgpu::util::DeviceExt;
 use winit::{event::*, window::Window};
 
 use crate::{
     camera, entity,
-    graphics::{
-        material,
-        sprite::{DrawSprite, Sprite},
-        vertex,
-    },
+    graphics::{material, sprite::Sprite, Graphics},
     resources,
 };
 
 pub struct State {
     camera: camera::Camera,
-    camera_uniform: camera::CameraUniform,
-    camera_buffer: wgpu::Buffer,
-    camera_bind_group: wgpu::BindGroup,
-    clear_color: wgpu::Color,
-    surface_config: wgpu::SurfaceConfiguration,
-    pub device: wgpu::Device,
-    pub texture_bind_group_layout: wgpu::BindGroupLayout,
     is_down_pressed: bool,
     is_left_pressed: bool,
     is_right_pressed: bool,
     is_up_pressed: bool,
     pub player: Option<entity::Entity>,
-    pub queue: wgpu::Queue,
-    render_pipeline: wgpu::RenderPipeline,
     pub size: winit::dpi::PhysicalSize<u32>,
-
-    surface: wgpu::Surface,
-    pub vertex_buffer: wgpu::Buffer,
-    pub index_buffer: wgpu::Buffer,
+    pub graphics: Graphics,
 
     materials: Vec<material::Material>,
 
@@ -50,63 +32,6 @@ impl State {
     pub async fn new(window: &Window) -> Self {
         let size = window.inner_size();
 
-        let instance = wgpu::Instance::new(wgpu::Backends::all());
-        let surface = unsafe { instance.create_surface(window) };
-
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions {
-                power_preference: wgpu::PowerPreference::default(),
-                compatible_surface: Some(&surface),
-                force_fallback_adapter: false,
-            })
-            .await
-            .unwrap();
-
-        let (device, queue) = adapter
-            .request_device(
-                &wgpu::DeviceDescriptor {
-                    features: wgpu::Features::empty(),
-                    limits: wgpu::Limits::default(),
-                    label: None,
-                },
-                None,
-            )
-            .await
-            .unwrap();
-
-        let surface_config = wgpu::SurfaceConfiguration {
-            usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
-            format: surface.get_supported_formats(&adapter)[0],
-            width: size.width,
-            height: size.height,
-            present_mode: wgpu::PresentMode::Fifo,
-        };
-
-        surface.configure(&device, &surface_config);
-
-        let texture_bind_group_layout =
-            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-                entries: &[
-                    wgpu::BindGroupLayoutEntry {
-                        binding: 0,
-                        visibility: wgpu::ShaderStages::FRAGMENT,
-                        ty: wgpu::BindingType::Texture {
-                            multisampled: false,
-                            view_dimension: wgpu::TextureViewDimension::D2,
-                            sample_type: wgpu::TextureSampleType::Float { filterable: true },
-                        },
-                        count: None,
-                    },
-                    wgpu::BindGroupLayoutEntry {
-                        binding: 1,
-                        visibility: wgpu::ShaderStages::FRAGMENT,
-                        ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
-                        count: None,
-                    },
-                ],
-                label: Some("texture_bind_group_layout"),
-            });
-
         let camera = camera::Camera {
             aspect: 1.8,
             position: (0.0, 0.0, 5.0).into(),
@@ -115,74 +40,16 @@ impl State {
             zfar: 100.0,
         };
 
-        let mut camera_uniform = camera::CameraUniform::new();
-        camera_uniform.update_view_proj(&camera);
+        let graphics = Graphics::new(window, &camera).await;
 
-        let camera_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("Camera Buffer"),
-            contents: bytemuck::cast_slice(&[camera_uniform]),
-            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
-        });
-
-        let camera_bind_group_layout =
-            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-                entries: &[wgpu::BindGroupLayoutEntry {
-                    binding: 0,
-                    visibility: wgpu::ShaderStages::VERTEX,
-                    ty: wgpu::BindingType::Buffer {
-                        ty: wgpu::BufferBindingType::Uniform,
-                        has_dynamic_offset: false,
-                        min_binding_size: None,
-                    },
-                    count: None,
-                }],
-                label: Some("camera_bind_group_layout"),
-            });
-
-        let camera_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-            layout: &camera_bind_group_layout,
-            entries: &[wgpu::BindGroupEntry {
-                binding: 0,
-                resource: camera_buffer.as_entire_binding(),
-            }],
-            label: Some("camera_bind_group"),
-        });
-
-        let clear_color = wgpu::Color {
-            r: 0.0,
-            g: 0.2,
-            b: 1.0,
-            a: 1.0,
-        };
-
-        let sprite_shader = resources::load_string("shader.wgsl").await.unwrap();
-        let sprite_shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
-            label: Some("Sprite Shader"),
-            source: wgpu::ShaderSource::Wgsl(sprite_shader.into()),
-        });
-
-        let layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-            label: Some("Render Pipeline Layout"),
-            bind_group_layouts: &[&texture_bind_group_layout, &camera_bind_group_layout],
-            push_constant_ranges: &[],
-        });
-
-        let render_pipeline = create_render_pipeline(
-            sprite_shader,
-            layout,
-            &[vertex::RenderVertex::desc()],
-            &device,
-            &surface_config,
-        );
-
-        let grass_texture = resources::load_texture("grass.png", &device, &queue)
+        let grass_texture = resources::load_texture("grass.png", &graphics.device, &graphics.queue)
             .await
             .unwrap();
 
         let grass_material = material::Material::new(
             String::from("grass"),
-            &device,
-            &texture_bind_group_layout,
+            &graphics.device,
+            &graphics.texture_bind_group_layout,
             grass_texture,
         );
 
@@ -193,25 +60,7 @@ impl State {
         let mut entities = Vec::new();
         println!("Creating buffers.");
 
-        const MAX_ENTITIES: usize = 50000;
-
-        const MAX_INDICES: usize = MAX_ENTITIES * 6;
-
         const NUM_INSTANCES_PER_ROW: u32 = 100;
-
-        let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("Vertex Buffer"),
-            contents: bytemuck::cast_slice(&[vertex::RenderVertex::zeroed(); MAX_ENTITIES]),
-            usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
-        });
-
-        let indices = (0..MAX_INDICES).collect::<Vec<_>>();
-
-        let index_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("Index Buffer"),
-            contents: bytemuck::cast_slice(indices.as_slice()),
-            usage: wgpu::BufferUsages::INDEX | wgpu::BufferUsages::COPY_DST,
-        });
 
         for y in 0..NUM_INSTANCES_PER_ROW {
             for x in 0..NUM_INSTANCES_PER_ROW {
@@ -223,9 +72,9 @@ impl State {
                     },
                     Quaternion::zero(),
                     grass_sprite.duplicate(),
-                    &queue,
-                    &index_buffer,
-                    &vertex_buffer,
+                    &graphics.queue,
+                    &graphics.index_buffer,
+                    &graphics.vertex_buffer,
                 );
 
                 entities.push(entity);
@@ -234,31 +83,19 @@ impl State {
 
         Self {
             camera,
-            camera_bind_group,
-            camera_buffer,
-            camera_uniform,
-            clear_color,
-            surface_config,
-            device,
+            graphics,
             entities,
             is_down_pressed: false,
             is_left_pressed: false,
             is_right_pressed: false,
             is_up_pressed: false,
-            queue,
-            render_pipeline,
             size,
             player: None,
-            texture_bind_group_layout,
-            surface,
             materials,
 
             instant: Instant::now(),
             last_n_ticks: LinkedList::new(),
             tick_queue_len: 15,
-
-            vertex_buffer,
-            index_buffer,
         }
     }
 
@@ -266,9 +103,11 @@ impl State {
         if new_size.width > 0 && new_size.height > 0 {
             self.camera.resize(new_size.width, new_size.height);
             self.size = new_size;
-            self.surface_config.width = new_size.width;
-            self.surface_config.height = new_size.height;
-            self.surface.configure(&self.device, &self.surface_config);
+            self.graphics.surface_config.width = new_size.width;
+            self.graphics.surface_config.height = new_size.height;
+            self.graphics
+                .surface
+                .configure(&self.graphics.device, &self.graphics.surface_config);
         }
     }
 
@@ -325,15 +164,15 @@ impl State {
         }
 
         if let Some(player) = &mut self.player {
-            player.move_by(movement, &self.queue, &self.vertex_buffer);
+            player.move_by(movement, &self.graphics.queue, &self.graphics.vertex_buffer);
             self.camera.set_position(player.get_position());
         }
 
-        self.camera_uniform.update_view_proj(&self.camera);
-        self.queue.write_buffer(
-            &self.camera_buffer,
+        self.graphics.camera_uniform.update_view_proj(&self.camera);
+        self.graphics.queue.write_buffer(
+            &self.graphics.camera_buffer,
             0,
-            bytemuck::cast_slice(&[self.camera_uniform]),
+            bytemuck::cast_slice(&[self.graphics.camera_uniform]),
         );
     }
 
@@ -350,58 +189,8 @@ impl State {
 
         self.instant = Instant::now();
 
-        let output = self.surface.get_current_texture()?;
-
-        let view = output
-            .texture
-            .create_view(&wgpu::TextureViewDescriptor::default());
-
-        let mut encoder = self
-            .device
-            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
-                label: Some("Render Encoder"),
-            });
-
-        let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-            label: Some("Render Pass"),
-            color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                view: &view,
-                resolve_target: None,
-                ops: wgpu::Operations {
-                    load: wgpu::LoadOp::Clear(self.clear_color),
-                    store: true,
-                },
-            })],
-            depth_stencil_attachment: None,
-        });
-
-        render_pass.set_pipeline(&self.render_pipeline);
-        render_pass.set_bind_group(1, &self.camera_bind_group, &[]);
-
-        render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
-        render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
-
-        let mut counter = 0;
-
-        for entity in &self.entities {
-            if counter % 1 == 0 {
-                let material = &self.materials[entity.sprite.material_id];
-                render_pass.draw_sprite(&material, entity.id);
-            }
-            counter += 1;
-        }
-
-        if let Some(player) = &self.player {
-            let material = &self.materials[player.sprite.material_id];
-            render_pass.draw_sprite(&material, player.id);
-        }
-
-        drop(render_pass);
-
-        self.queue.submit(std::iter::once(encoder.finish()));
-        output.present();
-
-        Ok(())
+        self.graphics
+            .render(&self.entities, &self.player, &self.materials)
     }
 
     pub fn add_material(&mut self, material: material::Material) -> usize {
@@ -412,47 +201,4 @@ impl State {
     pub fn num_entities(&self) -> usize {
         self.entities.len()
     }
-}
-
-fn create_render_pipeline(
-    shader: wgpu::ShaderModule,
-    layout: wgpu::PipelineLayout,
-    v_buffers: &[wgpu::VertexBufferLayout],
-    device: &wgpu::Device,
-    config: &wgpu::SurfaceConfiguration,
-) -> wgpu::RenderPipeline {
-    device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-        label: Some("Render Pipeline"),
-        layout: Some(&layout),
-        vertex: wgpu::VertexState {
-            module: &shader,
-            entry_point: "vs_main",
-            buffers: v_buffers,
-        },
-        fragment: Some(wgpu::FragmentState {
-            module: &shader,
-            entry_point: "fs_main",
-            targets: &[Some(wgpu::ColorTargetState {
-                format: config.format,
-                blend: Some(wgpu::BlendState::ALPHA_BLENDING),
-                write_mask: wgpu::ColorWrites::ALL,
-            })],
-        }),
-        primitive: wgpu::PrimitiveState {
-            topology: wgpu::PrimitiveTopology::TriangleList,
-            strip_index_format: None,
-            front_face: wgpu::FrontFace::Ccw,
-            cull_mode: Some(wgpu::Face::Back),
-            polygon_mode: wgpu::PolygonMode::Fill,
-            unclipped_depth: false,
-            conservative: false,
-        },
-        depth_stencil: None,
-        multisample: wgpu::MultisampleState {
-            count: 1,
-            mask: !0,
-            alpha_to_coverage_enabled: false,
-        },
-        multiview: None,
-    })
 }

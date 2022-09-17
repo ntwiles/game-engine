@@ -21,14 +21,15 @@ pub async fn run() {
 
     let mut state = state::State::new(&window).await;
 
-    let dude_texture = resources::load_texture("dude.png", &state.device, &state.queue)
-        .await
-        .unwrap();
+    let dude_texture =
+        resources::load_texture("dude.png", &state.graphics.device, &state.graphics.queue)
+            .await
+            .unwrap();
 
     let dude_material = material::Material::new(
         String::from("grass"),
-        &state.device,
-        &state.texture_bind_group_layout,
+        &state.graphics.device,
+        &state.graphics.texture_bind_group_layout,
         dude_texture,
     );
 
@@ -41,9 +42,9 @@ pub async fn run() {
         cgmath::Vector2::zero(),
         cgmath::Quaternion::zero(),
         dude_sprite,
-        &state.queue,
-        &state.index_buffer,
-        &state.vertex_buffer,
+        &state.graphics.queue,
+        &state.graphics.index_buffer,
+        &state.graphics.vertex_buffer,
     );
 
     state.player = Some(player);
