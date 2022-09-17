@@ -1,4 +1,4 @@
-use std::time::Instant;
+use std::{collections::LinkedList, time::Instant};
 
 use bytemuck::Zeroable;
 use cgmath::{prelude::*, Quaternion};
@@ -42,6 +42,8 @@ pub struct State {
     entities: Vec<entity::Entity>,
 
     instant: Instant,
+    last_n_ticks: LinkedList<u16>,
+    tick_queue_len: usize,
 }
 
 impl State {
@@ -250,7 +252,11 @@ impl State {
             texture_bind_group_layout,
             surface,
             materials,
+
             instant: Instant::now(),
+            last_n_ticks: LinkedList::new(),
+            tick_queue_len: 15,
+
             vertex_buffer,
             index_buffer,
         }
@@ -304,11 +310,6 @@ impl State {
     }
 
     pub fn update(&mut self) {
-        let fps = 1_000_000 / self.instant.elapsed().as_micros();
-        println!("FPS: {}", fps);
-
-        self.instant = Instant::now();
-
         let mut movement = cgmath::Vector2::<f32>::zero();
 
         if self.is_left_pressed {
@@ -337,6 +338,18 @@ impl State {
     }
 
     pub fn render(&mut self) -> Result<(), wgpu::SurfaceError> {
+        self.last_n_ticks
+            .push_front((1_000_000 / self.instant.elapsed().as_micros()) as u16);
+
+        if self.last_n_ticks.len() > self.tick_queue_len {
+            self.last_n_ticks.pop_back();
+        }
+
+        let fps = self.last_n_ticks.iter().sum::<u16>() / self.last_n_ticks.len() as u16;
+        println!("FPS: {}", fps);
+
+        self.instant = Instant::now();
+
         let output = self.surface.get_current_texture()?;
 
         let view = output
