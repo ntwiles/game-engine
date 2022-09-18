@@ -35,7 +35,7 @@ pub async fn run() {
 
     let material_id = state.add_material(dude_material);
 
-    let dude_sprite = sprite::Sprite::new(String::from("dude"), material_id);
+    let dude_sprite = sprite::Sprite::new(material_id);
 
     let player = entity::Entity::create(
         state.num_entities(),

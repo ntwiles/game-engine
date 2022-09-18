@@ -21,7 +21,7 @@ impl Entity {
         index_buffer: &wgpu::Buffer,
         vertex_buffer: &wgpu::Buffer,
     ) -> Self {
-        let verts = vertex::RenderVertex::new(position, rotation, &sprite.mesh.verts);
+        let verts = vertex::RenderVertex::new(position, rotation, &sprite.vertices);
 
         let offset = mem::size_of::<vertex::RenderVertex>() * verts.len() * id;
 
@@ -32,7 +32,6 @@ impl Entity {
         );
 
         let data = sprite
-            .mesh
             .indices
             .iter()
             .map(|i| i + (4 * id as u16))
@@ -67,8 +66,7 @@ impl Entity {
         self.position += offset;
 
         // TODO: Should we write to the buffer after every move, or once as its own step before render?
-        let verts =
-            vertex::RenderVertex::new(self.position, self.rotation, &self.sprite.mesh.verts);
+        let verts = vertex::RenderVertex::new(self.position, self.rotation, &self.sprite.vertices);
 
         let offset = std::mem::size_of::<vertex::RenderVertex>() * 4 * self.id;
 

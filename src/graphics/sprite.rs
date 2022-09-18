@@ -1,14 +1,15 @@
 use std::ops::Range;
 
-use super::{material, mesh, vertex};
+use super::{material, vertex};
 
 pub struct Sprite {
     pub material_id: usize,
-    pub mesh: mesh::Mesh,
+    pub indices: [u16; 6],
+    pub vertices: [vertex::Vertex; 4],
 }
 
 impl Sprite {
-    pub fn new(name: String, material_id: usize) -> Self {
+    pub fn new(material_id: usize) -> Self {
         let vertices = [
             vertex::Vertex {
                 position: [-0.5, 0.5, 0.0],
@@ -28,11 +29,13 @@ impl Sprite {
             },
         ];
 
-        let indices: &[u16] = &[0, 1, 3, 1, 2, 3];
+        let indices = [0, 1, 3, 1, 2, 3];
 
-        let mesh = mesh::Mesh::new(name, &vertices, indices);
-
-        Self { material_id, mesh }
+        Self {
+            material_id,
+            vertices,
+            indices,
+        }
     }
 
     /* TODO: This is a temporary method to facilitate early engine development.
@@ -41,7 +44,8 @@ impl Sprite {
     pub fn duplicate(&self) -> Self {
         Self {
             material_id: self.material_id,
-            mesh: self.mesh.duplicate(),
+            indices: self.indices,
+            vertices: self.vertices,
         }
     }
 }

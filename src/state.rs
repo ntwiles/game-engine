@@ -55,7 +55,7 @@ impl State {
 
         let materials = vec![grass_material];
 
-        let grass_sprite = Sprite::new(String::from("grass"), 0);
+        let grass_sprite = Sprite::new(0);
 
         let mut entities = Vec::new();
         println!("Creating buffers.");
