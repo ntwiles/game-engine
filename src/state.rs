@@ -58,7 +58,6 @@ impl State {
         let grass_sprite = Sprite::new(0);
 
         let mut entities = Vec::new();
-        println!("Creating buffers.");
 
         const NUM_INSTANCES_PER_ROW: u32 = 100;
 

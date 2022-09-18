@@ -16,6 +16,7 @@ pub struct RenderVertex {
 }
 
 impl RenderVertex {
+    // TODO: This makes no sense.
     pub fn new(
         position: cgmath::Vector2<f32>,
         rotation: cgmath::Quaternion<f32>,
