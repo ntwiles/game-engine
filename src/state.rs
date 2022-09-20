@@ -168,7 +168,6 @@ impl State {
         if let Some(player) = &mut self.player {
             player.move_by(movement);
 
-            // TODO: Should we write to the buffer after every move, or once as its own step before render?
             let verts = vertex::RenderVertex::new(
                 player.get_position(),
                 player.get_rotation(),
@@ -176,7 +175,6 @@ impl State {
             );
 
             self.graphics.write_entity(player.get_id(), verts);
-
             self.camera.set_position(player.get_position());
         }
 

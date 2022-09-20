@@ -222,15 +222,8 @@ impl Graphics {
         render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
         render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint32);
 
-        let mut counter = 0;
-
-        for entity in entities {
-            if counter % 1 == 0 {
-                let material = &materials[entity.sprite_mat];
-                render_pass.draw_sprite(&material, entity.get_id());
-            }
-            counter += 1;
-        }
+        let material = &materials[entities[0].sprite_mat];
+        render_pass.draw_sprites(&material, 0..entities.len() as u32);
 
         if let Some(player) = player {
             let material = &materials[player.sprite_mat];
