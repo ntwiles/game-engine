@@ -48,7 +48,7 @@ pub async fn run() {
         &sprite::Sprite::get_vertices(),
     );
 
-    state.graphics.write_entity(player.id, verts);
+    state.graphics.write_entity(player.get_id(), verts);
 
     state.player = Some(player);
 

@@ -77,7 +77,7 @@ impl State {
                     &sprite::Sprite::get_vertices(),
                 );
 
-                graphics.write_entity(entity.id, verts);
+                graphics.write_entity(entity.get_id(), verts);
 
                 entities.push(entity);
             }
@@ -171,7 +171,7 @@ impl State {
                 &sprite::Sprite::get_vertices(),
             );
 
-            self.graphics.write_entity(player.id, verts);
+            self.graphics.write_entity(player.get_id(), verts);
 
             self.camera.set_position(player.get_position());
         }

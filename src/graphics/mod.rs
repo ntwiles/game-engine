@@ -227,14 +227,14 @@ impl Graphics {
         for entity in entities {
             if counter % 1 == 0 {
                 let material = &materials[entity.sprite_mat];
-                render_pass.draw_sprite(&material, entity.id);
+                render_pass.draw_sprite(&material, entity.get_id());
             }
             counter += 1;
         }
 
         if let Some(player) = player {
             let material = &materials[player.sprite_mat];
-            render_pass.draw_sprite(&material, player.id);
+            render_pass.draw_sprite(&material, player.get_id());
         }
 
         drop(render_pass);

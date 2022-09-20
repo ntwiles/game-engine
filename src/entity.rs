@@ -4,7 +4,7 @@ pub struct Entity {
     position: cgmath::Vector2<f32>,
     rotation: cgmath::Quaternion<f32>,
     pub sprite_mat: usize,
-    pub id: usize,
+    id: usize,
 }
 
 impl Entity {
@@ -20,6 +20,10 @@ impl Entity {
             rotation,
             sprite_mat,
         }
+    }
+
+    pub fn get_id(&self) -> usize {
+        self.id
     }
 
     pub fn get_position(&self) -> cgmath::Vector2<f32> {
