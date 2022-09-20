@@ -5,7 +5,7 @@ use winit::{event::*, window::Window};
 
 use crate::{
     camera, entity,
-    graphics::{material, Graphics},
+    graphics::{material, sprite, vertex, Graphics},
     resources,
 };
 
@@ -40,7 +40,7 @@ impl State {
             zfar: 100.0,
         };
 
-        let graphics = Graphics::new(window, &camera).await;
+        let mut graphics = Graphics::new(window, &camera).await;
 
         let grass_texture = resources::load_texture("grass.png", &graphics.device, &graphics.queue)
             .await
@@ -69,10 +69,15 @@ impl State {
                     },
                     Quaternion::zero(),
                     0,
-                    &graphics.queue,
-                    &graphics.index_buffer,
-                    &graphics.vertex_buffer,
                 );
+
+                let verts = vertex::RenderVertex::new(
+                    entity.get_position(),
+                    entity.get_rotation(),
+                    &sprite::Sprite::get_vertices(),
+                );
+
+                graphics.write_entity(entity.id, verts);
 
                 entities.push(entity);
             }
@@ -157,7 +162,17 @@ impl State {
         }
 
         if let Some(player) = &mut self.player {
-            player.move_by(movement, &self.graphics.queue, &self.graphics.vertex_buffer);
+            player.move_by(movement);
+
+            // TODO: Should we write to the buffer after every move, or once as its own step before render?
+            let verts = vertex::RenderVertex::new(
+                player.get_position(),
+                player.get_rotation(),
+                &sprite::Sprite::get_vertices(),
+            );
+
+            self.graphics.write_entity(player.id, verts);
+
             self.camera.set_position(player.get_position());
         }
 

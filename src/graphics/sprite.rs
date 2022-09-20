@@ -5,7 +5,7 @@ use super::{material, vertex};
 pub struct Sprite;
 
 impl Sprite {
-    pub fn get_indices() -> [u16; 6] {
+    pub fn get_indices() -> [u32; 6] {
         [0, 1, 3, 1, 2, 3]
     }
 

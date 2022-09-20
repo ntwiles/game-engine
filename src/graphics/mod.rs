@@ -25,8 +25,7 @@ pub struct Graphics {
 use super::sprite::DrawSprite;
 use crate::{camera, entity, resources};
 
-const MAX_ENTITIES: usize = 50000;
-const MAX_INDICES: usize = MAX_ENTITIES * 6;
+const MAX_ENTITIES: usize = 20000;
 
 impl Graphics {
     pub async fn new(window: &Window, camera: &camera::Camera) -> Self {
@@ -68,11 +67,19 @@ impl Graphics {
 
         let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Vertex Buffer"),
-            contents: bytemuck::cast_slice(&[vertex::RenderVertex::zeroed(); MAX_ENTITIES]),
+            contents: bytemuck::cast_slice(&[vertex::RenderVertex::zeroed(); MAX_ENTITIES * 4]),
             usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
         });
 
-        let indices = (0..MAX_INDICES).collect::<Vec<_>>();
+        let mut indices = Vec::<u32>::new();
+
+        for i in 0..MAX_ENTITIES {
+            let new_indices = sprite::Sprite::get_indices()
+                .into_iter()
+                .map(|idx| idx + (4 * i as u32));
+
+            indices.extend(new_indices);
+        }
 
         let index_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Index Buffer"),
@@ -213,7 +220,7 @@ impl Graphics {
         render_pass.set_bind_group(1, &self.camera_bind_group, &[]);
 
         render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
-        render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
+        render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint32);
 
         let mut counter = 0;
 
@@ -254,6 +261,16 @@ impl Graphics {
         self.surface_config.width = new_size.width;
         self.surface_config.height = new_size.height;
         self.surface.configure(&self.device, &self.surface_config);
+    }
+
+    pub fn write_entity(&mut self, id: usize, verts: Vec<vertex::RenderVertex>) {
+        let offset = std::mem::size_of::<vertex::RenderVertex>() * 4 * id;
+
+        self.queue.write_buffer(
+            &self.vertex_buffer,
+            offset as wgpu::BufferAddress,
+            bytemuck::cast_slice(verts.as_slice()),
+        );
     }
 }
 

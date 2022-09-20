@@ -11,7 +11,7 @@ use winit::{
     window::WindowBuilder,
 };
 
-use graphics::{material, sprite};
+use graphics::{material, sprite, vertex};
 
 pub async fn run() {
     env_logger::init();
@@ -40,10 +40,15 @@ pub async fn run() {
         cgmath::Vector2::zero(),
         cgmath::Quaternion::zero(),
         material_id,
-        &state.graphics.queue,
-        &state.graphics.index_buffer,
-        &state.graphics.vertex_buffer,
     );
+
+    let verts = vertex::RenderVertex::new(
+        player.get_position(),
+        player.get_rotation(),
+        &sprite::Sprite::get_vertices(),
+    );
+
+    state.graphics.write_entity(player.id, verts);
 
     state.player = Some(player);
 
