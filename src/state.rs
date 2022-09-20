@@ -5,7 +5,7 @@ use winit::{event::*, window::Window};
 
 use crate::{
     camera, entity,
-    graphics::{material, sprite::Sprite, Graphics},
+    graphics::{material, Graphics},
     resources,
 };
 
@@ -55,8 +55,6 @@ impl State {
 
         let materials = vec![grass_material];
 
-        let grass_sprite = Sprite::new(0);
-
         let mut entities = Vec::new();
 
         const NUM_INSTANCES_PER_ROW: u32 = 100;
@@ -70,7 +68,7 @@ impl State {
                         y: y as f32,
                     },
                     Quaternion::zero(),
-                    grass_sprite.duplicate(),
+                    0,
                     &graphics.queue,
                     &graphics.index_buffer,
                     &graphics.vertex_buffer,

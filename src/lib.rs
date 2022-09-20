@@ -35,13 +35,11 @@ pub async fn run() {
 
     let material_id = state.add_material(dude_material);
 
-    let dude_sprite = sprite::Sprite::new(material_id);
-
     let player = entity::Entity::create(
         state.num_entities(),
         cgmath::Vector2::zero(),
         cgmath::Quaternion::zero(),
-        dude_sprite,
+        material_id,
         &state.graphics.queue,
         &state.graphics.index_buffer,
         &state.graphics.vertex_buffer,

@@ -7,7 +7,7 @@ use crate::graphics::{sprite, vertex};
 pub struct Entity {
     position: cgmath::Vector2<f32>,
     rotation: cgmath::Quaternion<f32>,
-    pub sprite: sprite::Sprite,
+    pub sprite_mat: usize,
     pub id: usize,
 }
 
@@ -16,7 +16,7 @@ impl Entity {
         id: usize,
         position: cgmath::Vector2<f32>,
         rotation: cgmath::Quaternion<f32>,
-        sprite: sprite::Sprite,
+        sprite_mat: usize,
         queue: &wgpu::Queue,
         index_buffer: &wgpu::Buffer,
         vertex_buffer: &wgpu::Buffer,
@@ -48,7 +48,7 @@ impl Entity {
             id,
             position,
             rotation,
-            sprite,
+            sprite_mat,
         }
     }
 

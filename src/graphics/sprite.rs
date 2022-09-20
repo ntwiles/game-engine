@@ -2,24 +2,9 @@ use std::ops::Range;
 
 use super::{material, vertex};
 
-pub struct Sprite {
-    pub material_id: usize,
-}
+pub struct Sprite;
 
 impl Sprite {
-    pub fn new(material_id: usize) -> Self {
-        Self { material_id }
-    }
-
-    /* TODO: This is a temporary method to facilitate early engine development.
-     * This should be removed when sprites/meshes can be loaded from disk instead
-     * of being created programmatically. */
-    pub fn duplicate(&self) -> Self {
-        Self {
-            material_id: self.material_id,
-        }
-    }
-
     pub fn get_indices() -> [u16; 6] {
         [0, 1, 3, 1, 2, 3]
     }
