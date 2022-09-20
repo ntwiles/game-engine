@@ -25,7 +25,7 @@ pub struct Graphics {
 use super::sprite::DrawSprite;
 use crate::{camera, entity, resources};
 
-const MAX_ENTITIES: usize = 20000;
+const MAX_ENTITIES: usize = 24000;
 
 impl Graphics {
     pub async fn new(window: &Window, camera: &camera::Camera) -> Self {
@@ -247,7 +247,7 @@ impl Graphics {
 }
 
 impl Graphics {
-    pub fn update_camera(&mut self, camera: &camera::Camera) {
+    pub fn write_camera(&mut self, camera: &camera::Camera) {
         self.camera_uniform.update_view_proj(camera);
 
         self.queue.write_buffer(

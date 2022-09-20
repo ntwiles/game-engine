@@ -57,7 +57,7 @@ impl State {
 
         let mut entities = Vec::new();
 
-        const NUM_INSTANCES_PER_ROW: u32 = 100;
+        const NUM_INSTANCES_PER_ROW: u32 = 150;
 
         for y in 0..NUM_INSTANCES_PER_ROW {
             for x in 0..NUM_INSTANCES_PER_ROW {
@@ -161,6 +161,10 @@ impl State {
             movement.y = -0.07;
         }
 
+        if movement.is_zero() {
+            return;
+        }
+
         if let Some(player) = &mut self.player {
             player.move_by(movement);
 
@@ -176,7 +180,7 @@ impl State {
             self.camera.set_position(player.get_position());
         }
 
-        self.graphics.update_camera(&self.camera);
+        self.graphics.write_camera(&self.camera);
     }
 
     pub fn render(&mut self) -> Result<(), wgpu::SurfaceError> {
