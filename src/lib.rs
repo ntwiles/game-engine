@@ -1,6 +1,7 @@
 mod camera;
 mod entity;
 mod graphics;
+mod physics;
 mod resources;
 mod state;
 
@@ -12,6 +13,7 @@ use winit::{
 };
 
 use graphics::{material, sprite, vertex};
+use physics::collider;
 
 pub async fn run() {
     env_logger::init();
@@ -35,11 +37,18 @@ pub async fn run() {
 
     let material_id = state.add_material(dude_material);
 
+    let collider = collider::Collider {
+        origin: cgmath::Vector2::zero(),
+        width: 1.0,
+        height: 1.0,
+    };
+
     let player = entity::Entity::create(
         state.num_entities(),
         cgmath::Vector2::zero(),
         cgmath::Quaternion::zero(),
         material_id,
+        Some(collider),
     );
 
     let verts = vertex::RenderVertex::new(
@@ -50,7 +59,30 @@ pub async fn run() {
 
     state.graphics.write_entity(player.get_id(), verts);
 
+    let collider = collider::Collider {
+        origin: cgmath::Vector2::zero(),
+        width: 1.0,
+        height: 1.0,
+    };
+
+    let wall = entity::Entity::create(
+        state.num_entities() + 1,
+        cgmath::Vector2 { x: 3.0, y: 1.0 },
+        cgmath::Quaternion::zero(),
+        material_id,
+        Some(collider),
+    );
+
+    let verts = vertex::RenderVertex::new(
+        wall.get_position(),
+        wall.get_rotation(),
+        &sprite::Sprite::get_vertices(),
+    );
+
+    state.graphics.write_entity(wall.get_id(), verts);
+
     state.player = Some(player);
+    state.wall = Some(wall);
 
     event_loop.run(move |event, _, control_flow| match event {
         Event::RedrawRequested(window_id) if window_id == window.id() => {

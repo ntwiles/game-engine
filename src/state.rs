@@ -16,6 +16,7 @@ pub struct State {
     is_right_pressed: bool,
     is_up_pressed: bool,
     pub player: Option<entity::Entity>,
+    pub wall: Option<entity::Entity>,
     pub size: winit::dpi::PhysicalSize<u32>,
     pub graphics: Graphics,
 
@@ -57,7 +58,7 @@ impl State {
 
         let mut entities = Vec::new();
 
-        const NUM_INSTANCES_PER_ROW: u32 = 150;
+        const NUM_INSTANCES_PER_ROW: u32 = 100;
 
         for y in 0..NUM_INSTANCES_PER_ROW {
             for x in 0..NUM_INSTANCES_PER_ROW {
@@ -69,6 +70,7 @@ impl State {
                     },
                     Quaternion::zero(),
                     0,
+                    None,
                 );
 
                 let verts = vertex::RenderVertex::new(
@@ -93,6 +95,7 @@ impl State {
             is_up_pressed: false,
             size,
             player: None,
+            wall: None,
             materials,
 
             instant: Instant::now(),
@@ -166,6 +169,20 @@ impl State {
         }
 
         if let Some(player) = &mut self.player {
+            if let Some(player_coll) = &player.collider {
+                if let Some(wall) = &self.wall {
+                    if let Some(other_coll) = &wall.collider {
+                        if player_coll.cast(
+                            player.get_position() + movement,
+                            &other_coll,
+                            wall.get_position(),
+                        ) {
+                            movement = cgmath::Vector2 { x: 0.0, y: 0.0 }
+                        }
+                    }
+                }
+            }
+
             player.move_by(movement);
 
             let verts = vertex::RenderVertex::new(
@@ -189,13 +206,13 @@ impl State {
             self.last_n_ticks.pop_back();
         }
 
-        let fps = self.last_n_ticks.iter().sum::<u16>() / self.last_n_ticks.len() as u16;
+        let fps = self.last_n_ticks.iter().sum::<u16>() / self.tick_queue_len as u16;
         println!("FPS: {}", fps);
 
         self.instant = Instant::now();
 
         self.graphics
-            .render(&self.entities, &self.player, &self.materials)
+            .render(&self.entities, &self.player, &self.wall, &self.materials)
     }
 
     pub fn add_material(&mut self, material: material::Material) -> usize {

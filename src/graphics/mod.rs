@@ -189,6 +189,7 @@ impl Graphics {
         &mut self,
         entities: &Vec<entity::Entity>,
         player: &Option<entity::Entity>,
+        wall: &Option<entity::Entity>,
         materials: &Vec<material::Material>,
     ) -> Result<(), wgpu::SurfaceError> {
         let output = self.surface.get_current_texture()?;
@@ -228,6 +229,11 @@ impl Graphics {
         if let Some(player) = player {
             let material = &materials[player.sprite_mat];
             render_pass.draw_sprite(&material, player.get_id());
+        }
+
+        if let Some(wall) = wall {
+            let material = &materials[wall.sprite_mat];
+            render_pass.draw_sprite(&material, wall.get_id());
         }
 
         drop(render_pass);

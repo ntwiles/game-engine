@@ -1,6 +1,6 @@
 {
   "editor.formatOnSave": true,
-  "editor.defaultFormatter": "matklad.rust-analyzer",
+  "editor.defaultFormatter": "rust-lang.rust-analyzer",
   "editor.semanticTokenColorCustomizations": {
     "enabled": true,
     "rules": {

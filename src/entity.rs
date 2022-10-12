@@ -1,10 +1,13 @@
 use cgmath;
 
+use crate::physics::collider;
+
 pub struct Entity {
     position: cgmath::Vector2<f32>,
     rotation: cgmath::Quaternion<f32>,
     pub sprite_mat: usize,
     id: usize,
+    pub collider: Option<collider::Collider>,
 }
 
 impl Entity {
@@ -13,12 +16,14 @@ impl Entity {
         position: cgmath::Vector2<f32>,
         rotation: cgmath::Quaternion<f32>,
         sprite_mat: usize,
+        collider: Option<collider::Collider>,
     ) -> Self {
         Self {
             id,
             position,
             rotation,
             sprite_mat,
+            collider,
         }
     }
 
