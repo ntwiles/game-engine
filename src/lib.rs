@@ -1,4 +1,5 @@
 mod camera;
+mod components;
 mod entity;
 mod graphics;
 mod physics;
@@ -12,6 +13,7 @@ use winit::{
     window::WindowBuilder,
 };
 
+use components::player_movement::PlayerMovement;
 use graphics::{material, sprite, vertex};
 use physics::collider;
 
@@ -43,13 +45,15 @@ pub async fn run() {
         height: 1.0,
     };
 
-    let player = entity::Entity::create(
+    let mut player = entity::Entity::create(
         state.num_entities(),
         cgmath::Vector2::zero(),
         cgmath::Quaternion::zero(),
         material_id,
         Some(collider),
     );
+
+    player.add_component(Box::new(PlayerMovement {}));
 
     let verts = vertex::RenderVertex::new(
         player.get_position(),

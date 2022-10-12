@@ -10,11 +10,11 @@ use crate::{
 };
 
 pub struct State {
-    camera: camera::Camera,
-    is_down_pressed: bool,
-    is_left_pressed: bool,
-    is_right_pressed: bool,
-    is_up_pressed: bool,
+    pub camera: camera::Camera,
+    pub is_down_pressed: bool,
+    pub is_left_pressed: bool,
+    pub is_right_pressed: bool,
+    pub is_up_pressed: bool,
     pub player: Option<entity::Entity>,
     pub wall: Option<entity::Entity>,
     pub size: winit::dpi::PhysicalSize<u32>,
@@ -22,7 +22,7 @@ pub struct State {
 
     materials: Vec<material::Material>,
 
-    entities: Vec<entity::Entity>,
+    entities: Vec<Option<entity::Entity>>,
 
     instant: Instant,
     last_n_ticks: LinkedList<u16>,
@@ -81,7 +81,7 @@ impl State {
 
                 graphics.write_entity(entity.get_id(), verts);
 
-                entities.push(entity);
+                entities.push(Some(entity));
             }
         }
 
@@ -150,49 +150,16 @@ impl State {
     }
 
     pub fn update(&mut self) {
-        let mut movement = cgmath::Vector2::<f32>::zero();
-
-        if self.is_left_pressed {
-            movement.x = -0.07;
-        } else if self.is_right_pressed {
-            movement.x = 0.07;
-        }
-
-        if self.is_up_pressed {
-            movement.y = 0.07;
-        } else if self.is_down_pressed {
-            movement.y = -0.07;
-        }
-
-        if movement.is_zero() {
-            return;
-        }
-
-        if let Some(player) = &mut self.player {
-            if let Some(player_coll) = &player.collider {
-                if let Some(wall) = &self.wall {
-                    if let Some(other_coll) = &wall.collider {
-                        if player_coll.cast(
-                            player.get_position() + movement,
-                            &other_coll,
-                            wall.get_position(),
-                        ) {
-                            movement = cgmath::Vector2 { x: 0.0, y: 0.0 }
-                        }
-                    }
-                }
+        for i in 0..self.entities.len() {
+            if let Some(mut entity) = self.entities[i].take() {
+                entity.update(self);
+                self.entities[i] = Some(entity);
             }
+        }
 
-            player.move_by(movement);
-
-            let verts = vertex::RenderVertex::new(
-                player.get_position(),
-                player.get_rotation(),
-                &sprite::Sprite::get_vertices(),
-            );
-
-            self.graphics.write_entity(player.get_id(), verts);
-            self.camera.set_position(player.get_position());
+        if let Some(mut player) = self.player.take() {
+            player.update(self);
+            self.player = Some(player);
         }
 
         self.graphics.write_camera(&self.camera);
@@ -207,7 +174,7 @@ impl State {
         }
 
         let fps = self.last_n_ticks.iter().sum::<u16>() / self.tick_queue_len as u16;
-        println!("FPS: {}", fps);
+        // println!("FPS: {}", fps);
 
         self.instant = Instant::now();
 

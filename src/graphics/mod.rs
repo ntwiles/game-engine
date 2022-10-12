@@ -3,6 +3,8 @@ pub mod sprite;
 pub mod texture;
 pub mod vertex;
 
+use std::sync::{Arc, Mutex};
+
 use bytemuck::Zeroable;
 use wgpu::util::DeviceExt;
 use winit::window::Window;
@@ -187,7 +189,7 @@ impl Graphics {
     }
     pub fn render(
         &mut self,
-        entities: &Vec<entity::Entity>,
+        entities: &Vec<Option<entity::Entity>>,
         player: &Option<entity::Entity>,
         wall: &Option<entity::Entity>,
         materials: &Vec<material::Material>,
@@ -223,7 +225,8 @@ impl Graphics {
         render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
         render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint32);
 
-        let material = &materials[entities[0].sprite_mat];
+        let mat_id = entities[0].as_ref().unwrap().sprite_mat;
+        let material = &materials[mat_id];
         render_pass.draw_sprites(&material, 0..entities.len() as u32);
 
         if let Some(player) = player {

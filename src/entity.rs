@@ -1,6 +1,6 @@
 use cgmath;
 
-use crate::physics::collider;
+use crate::{components, physics::collider, state::State};
 
 pub struct Entity {
     position: cgmath::Vector2<f32>,
@@ -8,6 +8,7 @@ pub struct Entity {
     pub sprite_mat: usize,
     id: usize,
     pub collider: Option<collider::Collider>,
+    pub components: Vec<Option<Box<dyn components::Component>>>,
 }
 
 impl Entity {
@@ -24,6 +25,7 @@ impl Entity {
             rotation,
             sprite_mat,
             collider,
+            components: Vec::new(),
         }
     }
 
@@ -41,5 +43,18 @@ impl Entity {
 
     pub fn move_by(&mut self, offset: cgmath::Vector2<f32>) {
         self.position += offset;
+    }
+
+    pub fn add_component(&mut self, component: Box<dyn components::Component>) {
+        self.components.push(Some(component));
+    }
+
+    pub fn update(&mut self, state: &mut State) {
+        for i in 0..self.components.len() {
+            if let Some(component) = self.components[i].take() {
+                component.update(self, state);
+                self.components[i] = Some(component);
+            }
+        }
     }
 }
