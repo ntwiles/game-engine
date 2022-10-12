@@ -174,7 +174,7 @@ impl State {
         }
 
         let fps = self.last_n_ticks.iter().sum::<u16>() / self.tick_queue_len as u16;
-        // println!("FPS: {}", fps);
+        println!("FPS: {}", fps);
 
         self.instant = Instant::now();
 

@@ -26,8 +26,6 @@ impl Component for PlayerMovement {
             movement.y = -0.07;
         }
 
-        println!("Movement: {:?}", movement);
-
         if movement.is_zero() {
             return;
         }

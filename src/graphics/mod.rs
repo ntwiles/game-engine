@@ -3,8 +3,6 @@ pub mod sprite;
 pub mod texture;
 pub mod vertex;
 
-use std::sync::{Arc, Mutex};
-
 use bytemuck::Zeroable;
 use wgpu::util::DeviceExt;
 use winit::window::Window;
