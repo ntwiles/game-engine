@@ -1,20 +1,17 @@
 use std::{collections::LinkedList, time::Instant};
 
 use cgmath::{prelude::*, Quaternion};
-use winit::{event::*, window::Window};
+use winit::window::Window;
 
 use crate::{
     camera, entity,
     graphics::{material, sprite, vertex, Graphics},
-    resources,
+    input, resources,
 };
 
 pub struct State {
     pub camera: camera::Camera,
-    pub is_down_pressed: bool,
-    pub is_left_pressed: bool,
-    pub is_right_pressed: bool,
-    pub is_up_pressed: bool,
+    pub input: input::ReadOnlyInput,
     pub player: Option<entity::Entity>,
     pub wall: Option<entity::Entity>,
     pub size: winit::dpi::PhysicalSize<u32>,
@@ -85,14 +82,13 @@ impl State {
             }
         }
 
+        let input = input::ReadOnlyInput::new();
+
         Self {
             camera,
             graphics,
             entities,
-            is_down_pressed: false,
-            is_left_pressed: false,
-            is_right_pressed: false,
-            is_up_pressed: false,
+            input,
             size,
             player: None,
             wall: None,
@@ -112,44 +108,9 @@ impl State {
         }
     }
 
-    pub fn input(&mut self, event: &WindowEvent) -> bool {
-        match event {
-            WindowEvent::KeyboardInput {
-                input:
-                    KeyboardInput {
-                        state,
-                        virtual_keycode: Some(keycode),
-                        ..
-                    },
-                ..
-            } => {
-                let is_pressed = *state == ElementState::Pressed;
+    pub fn update(&mut self, input: input::ReadOnlyInput) {
+        self.input = input;
 
-                match keycode {
-                    VirtualKeyCode::W | VirtualKeyCode::Up => {
-                        self.is_up_pressed = is_pressed;
-                        true
-                    }
-                    VirtualKeyCode::A | VirtualKeyCode::Left => {
-                        self.is_left_pressed = is_pressed;
-                        true
-                    }
-                    VirtualKeyCode::S | VirtualKeyCode::Down => {
-                        self.is_down_pressed = is_pressed;
-                        true
-                    }
-                    VirtualKeyCode::D | VirtualKeyCode::Right => {
-                        self.is_right_pressed = is_pressed;
-                        true
-                    }
-                    _ => false,
-                }
-            }
-            _ => false,
-        }
-    }
-
-    pub fn update(&mut self) {
         for i in 0..self.entities.len() {
             if let Some(mut entity) = self.entities[i].take() {
                 entity.update(self);

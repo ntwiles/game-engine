@@ -2,6 +2,7 @@ mod camera;
 mod components;
 mod entity;
 mod graphics;
+mod input;
 mod physics;
 mod resources;
 mod state;
@@ -15,6 +16,7 @@ use winit::{
 
 use components::player_movement::PlayerMovement;
 use graphics::{material, sprite, vertex};
+use input::Input;
 use physics::collider;
 
 pub async fn run() {
@@ -88,9 +90,11 @@ pub async fn run() {
     state.player = Some(player);
     state.wall = Some(wall);
 
+    let mut input = Input::new();
+
     event_loop.run(move |event, _, control_flow| match event {
         Event::RedrawRequested(window_id) if window_id == window.id() => {
-            state.update();
+            state.update(input.to_read_only());
 
             match state.render() {
                 Ok(_) => {}
@@ -104,7 +108,7 @@ pub async fn run() {
             ref event,
             window_id,
         } if window_id == window.id() => {
-            if !state.input(event) {
+            if !input.handle_event(event) {
                 match event {
                     WindowEvent::CloseRequested
                     | WindowEvent::KeyboardInput {

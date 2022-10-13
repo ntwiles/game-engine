@@ -14,15 +14,15 @@ impl Component for PlayerMovement {
     fn update(&self, entity: &mut Entity, state: &mut State) {
         let mut movement = cgmath::Vector2::<f32>::zero();
 
-        if state.is_left_pressed {
+        if state.input.is_left_pressed() {
             movement.x = -0.07;
-        } else if state.is_right_pressed {
+        } else if state.input.is_right_pressed() {
             movement.x = 0.07;
         }
 
-        if state.is_up_pressed {
+        if state.input.is_up_pressed() {
             movement.y = 0.07;
-        } else if state.is_down_pressed {
+        } else if state.input.is_down_pressed() {
             movement.y = -0.07;
         }
 
