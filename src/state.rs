@@ -9,13 +9,13 @@ use crate::{
     input, resources,
 };
 
-pub struct State {
+pub struct State<'a> {
     pub camera: camera::Camera,
     pub input: input::ReadOnlyInput,
     pub player: Option<entity::Entity>,
     pub wall: Option<entity::Entity>,
     pub size: winit::dpi::PhysicalSize<u32>,
-    pub graphics: Graphics,
+    pub graphics: Graphics<'a>,
 
     materials: Vec<material::Material>,
 
@@ -26,8 +26,8 @@ pub struct State {
     tick_queue_len: usize,
 }
 
-impl State {
-    pub async fn new(window: &Window) -> Self {
+impl<'a> State<'a> {
+    pub async fn new(window: &Window) -> State<'a> {
         let size = window.inner_size();
 
         let camera = camera::Camera {

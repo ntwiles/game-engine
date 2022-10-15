@@ -28,7 +28,7 @@ pub async fn run() {
     let mut state = state::State::new(&window).await;
 
     let dude_texture =
-        resources::load_texture("dude.png", &state.graphics.device, &state.graphics.queue)
+        resources::load_texture("ball.png", &state.graphics.device, &state.graphics.queue)
             .await
             .unwrap();
 

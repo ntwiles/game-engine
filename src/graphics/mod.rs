@@ -5,9 +5,14 @@ pub mod vertex;
 
 use bytemuck::Zeroable;
 use wgpu::util::DeviceExt;
+use wgpu_text::{
+    font::FontRef,
+    section::{HorizontalAlign, Layout, Section, Text},
+    TextBrush,
+};
 use winit::window::Window;
 
-pub struct Graphics {
+pub struct Graphics<'a> {
     pub surface: wgpu::Surface,
     clear_color: wgpu::Color,
     pub device: wgpu::Device,
@@ -20,6 +25,9 @@ pub struct Graphics {
     surface_config: wgpu::SurfaceConfiguration,
     camera_uniform: camera::CameraUniform,
     camera_buffer: wgpu::Buffer,
+    foo: &'a u32,
+    // text_brush: TextBrush<FontRef<'a>>,
+    // text_section: Section<'a>,
 }
 
 use super::sprite::DrawSprite;
@@ -27,8 +35,8 @@ use crate::{camera, entity, resources};
 
 const MAX_ENTITIES: usize = 24000;
 
-impl Graphics {
-    pub async fn new(window: &Window, camera: &camera::Camera) -> Self {
+impl<'a> Graphics<'a> {
+    pub async fn new(window: &Window, camera: &camera::Camera) -> Graphics<'a> {
         let size = window.inner_size();
 
         let instance = wgpu::Instance::new(wgpu::Backends::all());
@@ -126,6 +134,7 @@ impl Graphics {
             });
 
         let sprite_shader = resources::load_string("shader.wgsl").await.unwrap();
+
         let sprite_shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("Sprite Shader"),
             source: wgpu::ShaderSource::Wgsl(sprite_shader.into()),
@@ -170,7 +179,17 @@ impl Graphics {
             label: Some("camera_bind_group"),
         });
 
-        Self {
+        // let inconsolata = include_bytes!("Inconsolata-Regular.ttf");
+
+        // let text_brush = wgpu_text::BrushBuilder::using_font_bytes(inconsolata)
+        //     .unwrap()
+        //     .build(&device, &surface_config);
+
+        // let text_section = Section::default()
+        //     .add_text(Text::new("Hello World"))
+        //     .with_layout(Layout::default().h_align(HorizontalAlign::Center));
+
+        Graphics {
             device,
             index_buffer,
             vertex_buffer,
@@ -183,8 +202,11 @@ impl Graphics {
             camera_bind_group,
             texture_bind_group_layout,
             surface_config,
+            foo: &7, // text_brush,
+                     // text_section,
         }
     }
+
     pub fn render(
         &mut self,
         entities: &Vec<Option<entity::Entity>>,
@@ -239,14 +261,22 @@ impl Graphics {
 
         drop(render_pass);
 
-        self.queue.submit(std::iter::once(encoder.finish()));
+        // Has to be queued every frame.
+        // self.text_brush.queue(&self.text_section);
+
+        // let text_buffer = self.text_brush.draw(&self.device, &view, &self.queue);
+
+        // Has to be submitted last so text won't be overlapped.
+        self.queue.submit([encoder.finish()]);
+        //self.queue.submit([encoder.finish(), text_buffer]);
+
         output.present();
 
         Ok(())
     }
 }
 
-impl Graphics {
+impl<'a> Graphics<'a> {
     pub fn write_camera(&mut self, camera: &camera::Camera) {
         self.camera_uniform.update_view_proj(camera);
 
