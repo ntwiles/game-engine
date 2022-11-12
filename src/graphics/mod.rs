@@ -8,18 +8,18 @@ use wgpu::util::DeviceExt;
 use winit::window::Window;
 
 pub struct Graphics {
-    pub surface: wgpu::Surface,
+    camera_bind_group: wgpu::BindGroup,
+    camera_buffer: wgpu::Buffer,
+    camera_uniform: camera::CameraUniform,
     clear_color: wgpu::Color,
     pub device: wgpu::Device,
-    render_pipeline: wgpu::RenderPipeline,
-    pub vertex_buffer: wgpu::Buffer,
     pub index_buffer: wgpu::Buffer,
     pub queue: wgpu::Queue,
-    camera_bind_group: wgpu::BindGroup,
-    pub texture_bind_group_layout: wgpu::BindGroupLayout,
+    render_pipeline: wgpu::RenderPipeline,
+    pub surface: wgpu::Surface,
     surface_config: wgpu::SurfaceConfiguration,
-    camera_uniform: camera::CameraUniform,
-    camera_buffer: wgpu::Buffer,
+    pub texture_bind_group_layout: wgpu::BindGroupLayout,
+    pub vertex_buffer: wgpu::Buffer,
 }
 
 use super::sprite::DrawSprite;
@@ -60,15 +60,17 @@ impl Graphics {
             format: surface.get_supported_formats(&adapter)[0],
             width: size.width,
             height: size.height,
+            alpha_mode: wgpu::CompositeAlphaMode::Auto,
             present_mode: wgpu::PresentMode::Fifo,
         };
 
         surface.configure(&device, &surface_config);
 
-        let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+        let vertex_buffer = device.create_buffer(&wgpu::BufferDescriptor {
+            size: std::mem::size_of::<[vertex::RenderVertex; MAX_ENTITIES * 4]>() as u64,
             label: Some("Vertex Buffer"),
-            contents: bytemuck::cast_slice(&[vertex::RenderVertex::zeroed(); MAX_ENTITIES * 4]),
             usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
+            mapped_at_creation: false,
         });
 
         let mut indices = Vec::<u32>::new();
@@ -171,20 +173,21 @@ impl Graphics {
         });
 
         Self {
+            clear_color,
+            camera_bind_group,
+            camera_buffer,
+            camera_uniform,
             device,
             index_buffer,
-            vertex_buffer,
-            surface,
             queue,
             render_pipeline,
-            clear_color,
-            camera_uniform,
-            camera_buffer,
-            camera_bind_group,
-            texture_bind_group_layout,
+            surface,
             surface_config,
+            texture_bind_group_layout,
+            vertex_buffer,
         }
     }
+
     pub fn render(
         &mut self,
         entities: &Vec<Option<entity::Entity>>,

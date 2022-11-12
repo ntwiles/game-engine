@@ -18,7 +18,6 @@ pub struct State {
     pub graphics: Graphics,
 
     materials: Vec<material::Material>,
-
     entities: Vec<Option<entity::Entity>>,
 
     instant: Instant,
@@ -93,7 +92,6 @@ impl State {
             player: None,
             wall: None,
             materials,
-
             instant: Instant::now(),
             last_n_ticks: LinkedList::new(),
             tick_queue_len: 15,
