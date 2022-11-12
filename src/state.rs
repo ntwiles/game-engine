@@ -4,21 +4,21 @@ use cgmath::{prelude::*, Quaternion};
 use winit::window::Window;
 
 use crate::{
-    camera, entity,
+    camera::Camera,
+    entity,
     graphics::{material, sprite, vertex, Graphics},
     input, resources,
 };
 
-pub struct State<'a> {
-    pub camera: camera::Camera,
+pub struct State {
+    pub camera: Camera,
     pub input: input::ReadOnlyInput,
     pub player: Option<entity::Entity>,
     pub wall: Option<entity::Entity>,
     pub size: winit::dpi::PhysicalSize<u32>,
-    pub graphics: Graphics<'a>,
+    pub graphics: Graphics,
 
     materials: Vec<material::Material>,
-
     entities: Vec<Option<entity::Entity>>,
 
     instant: Instant,
@@ -26,11 +26,11 @@ pub struct State<'a> {
     tick_queue_len: usize,
 }
 
-impl<'a> State<'a> {
-    pub async fn new(window: &Window) -> State<'a> {
+impl State {
+    pub async fn new(window: &Window) -> State {
         let size = window.inner_size();
 
-        let camera = camera::Camera {
+        let camera = Camera {
             aspect: 1.8,
             position: (0.0, 0.0, 5.0).into(),
             scale: 6.0,
@@ -38,7 +38,7 @@ impl<'a> State<'a> {
             zfar: 100.0,
         };
 
-        let mut graphics = Graphics::new(window, &camera).await;
+        let mut graphics = Graphics::new(&window, &camera).await;
 
         let grass_texture = resources::load_texture("grass.png", &graphics.device, &graphics.queue)
             .await
@@ -93,7 +93,6 @@ impl<'a> State<'a> {
             player: None,
             wall: None,
             materials,
-
             instant: Instant::now(),
             last_n_ticks: LinkedList::new(),
             tick_queue_len: 15,

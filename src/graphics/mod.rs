@@ -5,14 +5,14 @@ pub mod vertex;
 
 use bytemuck::Zeroable;
 use wgpu::util::DeviceExt;
-use wgpu_text::{
-    font::FontRef,
-    section::{HorizontalAlign, Layout, Section, Text},
-    TextBrush,
-};
+// use wgpu_text::{
+//     font::FontRef,
+//     section::{HorizontalAlign, Layout, Section, Text},
+//     TextBrush,
+// };
 use winit::window::Window;
 
-pub struct Graphics<'a> {
+pub struct Graphics {
     pub surface: wgpu::Surface,
     clear_color: wgpu::Color,
     pub device: wgpu::Device,
@@ -25,7 +25,6 @@ pub struct Graphics<'a> {
     surface_config: wgpu::SurfaceConfiguration,
     camera_uniform: camera::CameraUniform,
     camera_buffer: wgpu::Buffer,
-    foo: &'a u32,
     // text_brush: TextBrush<FontRef<'a>>,
     // text_section: Section<'a>,
 }
@@ -33,10 +32,10 @@ pub struct Graphics<'a> {
 use super::sprite::DrawSprite;
 use crate::{camera, entity, resources};
 
-const MAX_ENTITIES: usize = 24000;
+const MAX_ENTITIES: usize = 16;
 
-impl<'a> Graphics<'a> {
-    pub async fn new(window: &Window, camera: &camera::Camera) -> Graphics<'a> {
+impl Graphics {
+    pub async fn new(window: &Window, camera: &camera::Camera) -> Graphics {
         let size = window.inner_size();
 
         let instance = wgpu::Instance::new(wgpu::Backends::all());
@@ -202,8 +201,8 @@ impl<'a> Graphics<'a> {
             camera_bind_group,
             texture_bind_group_layout,
             surface_config,
-            foo: &7, // text_brush,
-                     // text_section,
+            // text_brush,
+            // text_section,
         }
     }
 
@@ -268,7 +267,7 @@ impl<'a> Graphics<'a> {
 
         // Has to be submitted last so text won't be overlapped.
         self.queue.submit([encoder.finish()]);
-        //self.queue.submit([encoder.finish(), text_buffer]);
+        // self.queue.submit([encoder.finish(), text_buffer]);
 
         output.present();
 
@@ -276,7 +275,7 @@ impl<'a> Graphics<'a> {
     }
 }
 
-impl<'a> Graphics<'a> {
+impl Graphics {
     pub fn write_camera(&mut self, camera: &camera::Camera) {
         self.camera_uniform.update_view_proj(camera);
 

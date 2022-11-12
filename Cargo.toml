@@ -21,4 +21,4 @@ wgpu_text = "0.6.3"
 anyhow = "1.0"
 fs_extra = "1.2"
 glob = "0.3"
- 
+
