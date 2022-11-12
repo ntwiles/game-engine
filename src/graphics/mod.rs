@@ -5,37 +5,33 @@ pub mod vertex;
 
 use bytemuck::Zeroable;
 use wgpu::util::DeviceExt;
-// use wgpu_text::{
-//     font::FontRef,
-//     section::{HorizontalAlign, Layout, Section, Text},
-//     TextBrush,
-// };
+use wgpu_glyph::{ab_glyph, GlyphBrush, GlyphBrushBuilder, Section, Text};
 use winit::window::Window;
 
 pub struct Graphics {
-    pub surface: wgpu::Surface,
+    camera_bind_group: wgpu::BindGroup,
+    camera_buffer: wgpu::Buffer,
+    camera_uniform: camera::CameraUniform,
     clear_color: wgpu::Color,
     pub device: wgpu::Device,
-    render_pipeline: wgpu::RenderPipeline,
-    pub vertex_buffer: wgpu::Buffer,
     pub index_buffer: wgpu::Buffer,
     pub queue: wgpu::Queue,
-    camera_bind_group: wgpu::BindGroup,
-    pub texture_bind_group_layout: wgpu::BindGroupLayout,
+    render_pipeline: wgpu::RenderPipeline,
+    staging_belt: wgpu::util::StagingBelt,
+    pub surface: wgpu::Surface,
     surface_config: wgpu::SurfaceConfiguration,
-    camera_uniform: camera::CameraUniform,
-    camera_buffer: wgpu::Buffer,
-    // text_brush: TextBrush<FontRef<'a>>,
-    // text_section: Section<'a>,
+    text_brush: GlyphBrush<()>,
+    pub texture_bind_group_layout: wgpu::BindGroupLayout,
+    pub vertex_buffer: wgpu::Buffer,
 }
 
 use super::sprite::DrawSprite;
 use crate::{camera, entity, resources};
 
-const MAX_ENTITIES: usize = 16;
+const MAX_ENTITIES: usize = 24000;
 
 impl Graphics {
-    pub async fn new(window: &Window, camera: &camera::Camera) -> Graphics {
+    pub async fn new(window: &Window, camera: &camera::Camera) -> Self {
         let size = window.inner_size();
 
         let instance = wgpu::Instance::new(wgpu::Backends::all());
@@ -67,15 +63,17 @@ impl Graphics {
             format: surface.get_supported_formats(&adapter)[0],
             width: size.width,
             height: size.height,
+            alpha_mode: wgpu::CompositeAlphaMode::Auto,
             present_mode: wgpu::PresentMode::Fifo,
         };
 
         surface.configure(&device, &surface_config);
 
-        let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+        let vertex_buffer = device.create_buffer(&wgpu::BufferDescriptor {
+            size: std::mem::size_of::<[vertex::RenderVertex; MAX_ENTITIES * 4]>() as u64,
             label: Some("Vertex Buffer"),
-            contents: bytemuck::cast_slice(&[vertex::RenderVertex::zeroed(); MAX_ENTITIES * 4]),
             usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
+            mapped_at_creation: false,
         });
 
         let mut indices = Vec::<u32>::new();
@@ -133,7 +131,6 @@ impl Graphics {
             });
 
         let sprite_shader = resources::load_string("shader.wgsl").await.unwrap();
-
         let sprite_shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("Sprite Shader"),
             source: wgpu::ShaderSource::Wgsl(sprite_shader.into()),
@@ -178,31 +175,29 @@ impl Graphics {
             label: Some("camera_bind_group"),
         });
 
-        // let inconsolata = include_bytes!("Inconsolata-Regular.ttf");
+        let inconsolata =
+            ab_glyph::FontArc::try_from_slice(include_bytes!("Inconsolata-Regular.ttf")).unwrap();
 
-        // let text_brush = wgpu_text::BrushBuilder::using_font_bytes(inconsolata)
-        //     .unwrap()
-        //     .build(&device, &surface_config);
+        let text_brush =
+            GlyphBrushBuilder::using_font(inconsolata).build(&device, surface_config.format);
 
-        // let text_section = Section::default()
-        //     .add_text(Text::new("Hello World"))
-        //     .with_layout(Layout::default().h_align(HorizontalAlign::Center));
+        let staging_belt = wgpu::util::StagingBelt::new(1024);
 
         Graphics {
+            camera_bind_group,
+            camera_buffer,
+            camera_uniform,
+            clear_color,
             device,
             index_buffer,
-            vertex_buffer,
-            surface,
             queue,
             render_pipeline,
-            clear_color,
-            camera_uniform,
-            camera_buffer,
-            camera_bind_group,
-            texture_bind_group_layout,
+            staging_belt,
+            surface,
             surface_config,
-            // text_brush,
-            // text_section,
+            texture_bind_group_layout,
+            text_brush,
+            vertex_buffer,
         }
     }
 
@@ -260,22 +255,52 @@ impl Graphics {
 
         drop(render_pass);
 
-        // Has to be queued every frame.
-        // self.text_brush.queue(&self.text_section);
+        self.text_brush.queue(Section {
+            screen_position: (30.0, 30.0),
+            bounds: (
+                self.surface_config.width as f32,
+                self.surface_config.height as f32,
+            ),
+            text: vec![Text::new("Hello wgpu_glyph!")
+                .with_color([0.0, 0.0, 0.0, 1.0])
+                .with_scale(40.0)],
+            ..Section::default()
+        });
 
-        // let text_buffer = self.text_brush.draw(&self.device, &view, &self.queue);
+        self.text_brush.queue(Section {
+            screen_position: (30.0, 90.0),
+            bounds: (
+                self.surface_config.width as f32,
+                self.surface_config.height as f32,
+            ),
+            text: vec![Text::new("Hello wgpu_glyph!")
+                .with_color([1.0, 1.0, 1.0, 1.0])
+                .with_scale(40.0)],
+            ..Section::default()
+        });
 
-        // Has to be submitted last so text won't be overlapped.
+        // Draw the text!
+        self.text_brush
+            .draw_queued(
+                &self.device,
+                &mut self.staging_belt,
+                &mut encoder,
+                &view,
+                self.surface_config.width,
+                self.surface_config.height,
+            )
+            .expect("Draw queued");
+
+        self.staging_belt.finish();
         self.queue.submit([encoder.finish()]);
-        // self.queue.submit([encoder.finish(), text_buffer]);
 
         output.present();
 
+        self.staging_belt.recall();
+
         Ok(())
     }
-}
 
-impl Graphics {
     pub fn write_camera(&mut self, camera: &camera::Camera) {
         self.camera_uniform.update_view_proj(camera);
 

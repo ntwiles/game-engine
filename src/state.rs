@@ -27,7 +27,7 @@ pub struct State {
 }
 
 impl State {
-    pub async fn new(window: &Window) -> State {
+    pub async fn new(window: &Window) -> Self {
         let size = window.inner_size();
 
         let camera = Camera {
@@ -84,7 +84,7 @@ impl State {
 
         let input = input::ReadOnlyInput::new();
 
-        Self {
+        State {
             camera,
             graphics,
             entities,
