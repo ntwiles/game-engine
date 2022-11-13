@@ -44,12 +44,8 @@ impl State {
             .await
             .unwrap();
 
-        let grass_material = material::Material::new(
-            String::from("grass"),
-            &graphics.device,
-            &graphics.texture_bind_group_layout,
-            grass_texture,
-        );
+        let grass_material =
+            material::Material::new(String::from("grass"), &graphics, grass_texture);
 
         let materials = vec![grass_material];
 

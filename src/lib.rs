@@ -32,12 +32,8 @@ pub async fn run() {
             .await
             .unwrap();
 
-    let dude_material = material::Material::new(
-        String::from("grass"),
-        &state.graphics.device,
-        &state.graphics.texture_bind_group_layout,
-        dude_texture,
-    );
+    let dude_material =
+        material::Material::new(String::from("grass"), &state.graphics, dude_texture);
 
     let material_id = state.add_material(dude_material);
 

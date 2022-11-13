@@ -3,7 +3,6 @@ pub mod sprite;
 pub mod texture;
 pub mod vertex;
 
-use bytemuck::Zeroable;
 use wgpu::util::DeviceExt;
 use wgpu_glyph::{ab_glyph, GlyphBrush, GlyphBrushBuilder, Section, Text};
 use winit::window::Window;
@@ -21,12 +20,18 @@ pub struct Graphics {
     pub surface: wgpu::Surface,
     surface_config: wgpu::SurfaceConfiguration,
     text_brush: GlyphBrush<()>,
-    pub texture_bind_group_layout: wgpu::BindGroupLayout,
-    pub vertex_buffer: wgpu::Buffer,
+    texture_bind_group_layout: wgpu::BindGroupLayout,
+    vertex_buffer: wgpu::Buffer,
 }
 
 use super::sprite::DrawSprite;
-use crate::{camera, entity, resources};
+
+use crate::{
+    camera,
+    entity,
+    graphics::texture::Texture, // this couldn't be imported within super::{} for some reason?
+    resources,
+};
 
 const MAX_ENTITIES: usize = 24000;
 
@@ -279,7 +284,6 @@ impl Graphics {
             ..Section::default()
         });
 
-        // Draw the text!
         self.text_brush
             .draw_queued(
                 &self.device,
@@ -299,6 +303,27 @@ impl Graphics {
         self.staging_belt.recall();
 
         Ok(())
+    }
+
+    pub fn create_texture_bind_group(
+        &self,
+        name: &str,
+        diffuse_texture: &Texture,
+    ) -> wgpu::BindGroup {
+        self.device.create_bind_group(&wgpu::BindGroupDescriptor {
+            layout: &self.texture_bind_group_layout,
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: wgpu::BindingResource::TextureView(&diffuse_texture.view),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 1,
+                    resource: wgpu::BindingResource::Sampler(&diffuse_texture.sampler),
+                },
+            ],
+            label: Some(&format!("{name} Bind Group")),
+        })
     }
 
     pub fn write_camera(&mut self, camera: &camera::Camera) {
