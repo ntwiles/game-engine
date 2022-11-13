@@ -5,7 +5,7 @@ pub mod vertex;
 
 use image::{ImageBuffer, Rgba};
 use wgpu::{util::DeviceExt, Sampler, TextureView};
-use wgpu_glyph::{ab_glyph, GlyphBrush, GlyphBrushBuilder, Section, Text};
+use wgpu_glyph::{GlyphBrush, GlyphBrushBuilder, Section, Text};
 use winit::window::Window;
 
 pub struct Graphics {
@@ -183,8 +183,9 @@ impl Graphics {
             label: Some("camera_bind_group"),
         });
 
-        let inconsolata =
-            ab_glyph::FontArc::try_from_slice(include_bytes!("Inconsolata-Regular.ttf")).unwrap();
+        let inconsolata = resources::load_font("Inconsolata-Regular.ttf")
+            .await
+            .unwrap();
 
         let text_brush =
             GlyphBrushBuilder::using_font(inconsolata).build(&device, surface_config.format);
