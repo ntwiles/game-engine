@@ -3,6 +3,7 @@ use image::GenericImageView;
 
 use super::Graphics;
 
+// TODO: This has become just a thin wrapper to wgpu::Texture, not much point in keeping this.
 pub struct Texture {
     pub texture: wgpu::Texture,
     pub view: wgpu::TextureView,

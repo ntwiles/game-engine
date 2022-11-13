@@ -33,6 +33,7 @@ use crate::{
     entity,
     graphics::texture::Texture, // this couldn't be imported within super::{} for some reason?
     resources,
+    ui_canvas::UiCanvas,
 };
 
 const MAX_ENTITIES: usize = 24000;
@@ -225,6 +226,7 @@ impl Graphics {
         player: &Option<entity::Entity>,
         wall: &Option<entity::Entity>,
         materials: &Vec<material::Material>,
+        ui_canvas: &UiCanvas,
     ) -> Result<(), wgpu::SurfaceError> {
         let output = self.surface.get_current_texture()?;
 
@@ -274,26 +276,26 @@ impl Graphics {
         drop(render_pass);
 
         self.text_brush.queue(Section {
+            screen_position: (32.0, 32.0),
+            bounds: (
+                self.surface_config.width as f32,
+                self.surface_config.height as f32,
+            ),
+            text: vec![Text::new(&ui_canvas.text)
+                .with_color([0.0, 0.0, 0.0, 1.0])
+                .with_scale(20.0)],
+            ..Section::default()
+        });
+
+        self.text_brush.queue(Section {
             screen_position: (30.0, 30.0),
             bounds: (
                 self.surface_config.width as f32,
                 self.surface_config.height as f32,
             ),
-            text: vec![Text::new("Hello wgpu_glyph!")
-                .with_color([0.0, 0.0, 0.0, 1.0])
-                .with_scale(40.0)],
-            ..Section::default()
-        });
-
-        self.text_brush.queue(Section {
-            screen_position: (30.0, 90.0),
-            bounds: (
-                self.surface_config.width as f32,
-                self.surface_config.height as f32,
-            ),
-            text: vec![Text::new("Hello wgpu_glyph!")
+            text: vec![Text::new(&ui_canvas.text)
                 .with_color([1.0, 1.0, 1.0, 1.0])
-                .with_scale(40.0)],
+                .with_scale(20.0)],
             ..Section::default()
         });
 

@@ -1,4 +1,4 @@
-use std::{collections::LinkedList, time::Instant};
+use std::{collections::LinkedList, fmt, time::Instant};
 
 use cgmath::{prelude::*, Quaternion};
 use winit::window::Window;
@@ -7,7 +7,7 @@ use crate::{
     camera::Camera,
     entity,
     graphics::{material, sprite, vertex, Graphics},
-    input, resources,
+    input, resources, ui_canvas,
 };
 
 pub struct State {
@@ -17,13 +17,12 @@ pub struct State {
     pub wall: Option<entity::Entity>,
     pub size: winit::dpi::PhysicalSize<u32>,
     pub graphics: Graphics,
-
     materials: Vec<material::Material>,
     entities: Vec<Option<entity::Entity>>,
-
     instant: Instant,
     last_n_ticks: LinkedList<u16>,
     tick_queue_len: usize,
+    ui_canvas: ui_canvas::UiCanvas,
 }
 
 impl State {
@@ -80,6 +79,10 @@ impl State {
 
         let input = input::ReadOnlyInput::new();
 
+        let ui_canvas = ui_canvas::UiCanvas {
+            text: "hello world!".to_owned(),
+        };
+
         State {
             camera,
             graphics,
@@ -92,6 +95,7 @@ impl State {
             instant: Instant::now(),
             last_n_ticks: LinkedList::new(),
             tick_queue_len: 15,
+            ui_canvas,
         }
     }
 
@@ -130,12 +134,17 @@ impl State {
         }
 
         let fps = self.last_n_ticks.iter().sum::<u16>() / self.tick_queue_len as u16;
-        println!("FPS: {}", fps);
+        self.ui_canvas.set_text(&format!("FPS: {fps}"));
 
         self.instant = Instant::now();
 
-        self.graphics
-            .render(&self.entities, &self.player, &self.wall, &self.materials)
+        self.graphics.render(
+            &self.entities,
+            &self.player,
+            &self.wall,
+            &self.materials,
+            &self.ui_canvas,
+        )
     }
 
     pub fn add_material(&mut self, material: material::Material) -> usize {

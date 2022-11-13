@@ -6,6 +6,7 @@ mod input;
 mod physics;
 mod resources;
 mod state;
+mod ui_canvas;
 
 use cgmath::prelude::*;
 use winit::{
