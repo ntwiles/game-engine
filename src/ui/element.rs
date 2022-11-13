@@ -5,7 +5,7 @@ pub struct Element {
 }
 
 impl Element {
-    pub fn get_body(&self) -> String {
+    pub fn body(&self) -> String {
         self.body.clone()
     }
 

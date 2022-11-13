@@ -14,7 +14,8 @@ impl Canvas {
             },
         }
     }
-    pub fn get_element(&mut self) -> &mut Element {
+
+    pub fn root(&mut self) -> &mut Element {
         &mut self.document
     }
 }

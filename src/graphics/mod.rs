@@ -275,7 +275,7 @@ impl Graphics {
 
         drop(render_pass);
 
-        let text = ui_canvas.get_element().get_body();
+        let text = ui_canvas.root().body();
 
         self.text_brush.queue(Section {
             screen_position: (32.0, 32.0),

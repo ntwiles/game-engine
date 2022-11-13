@@ -1,4 +1,4 @@
-use std::{collections::LinkedList, fmt, time::Instant};
+use std::{collections::LinkedList, time::Instant};
 
 use cgmath::{prelude::*, Quaternion};
 use winit::window::Window;
@@ -133,9 +133,7 @@ impl State {
         }
 
         let fps = self.last_n_ticks.iter().sum::<u16>() / self.tick_queue_len as u16;
-        self.ui_canvas
-            .get_element()
-            .set_body(&format!("FPS: {fps}"));
+        self.ui_canvas.root().set_body(&format!("FPS: {fps}"));
 
         self.instant = Instant::now();
 
