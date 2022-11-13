@@ -1,10 +1,10 @@
-use std::path;
+use std::path::{self, PathBuf};
 
 use wgpu_glyph::ab_glyph;
 
 use crate::graphics::{texture, Graphics};
 
-pub async fn load_bytes(sub_path: Option<&str>, file_name: &str) -> anyhow::Result<Vec<u8>> {
+fn build_path(sub_path: Option<&str>, file_name: &str) -> PathBuf {
     let path = path::Path::new(env!("OUT_DIR")).join("res");
 
     let path = if let Some(sub_path) = sub_path {
@@ -13,14 +13,22 @@ pub async fn load_bytes(sub_path: Option<&str>, file_name: &str) -> anyhow::Resu
         path
     };
 
-    Ok(std::fs::read(path.join(file_name))?)
+    path.join(file_name)
 }
 
-pub async fn load_string(file_name: &str) -> anyhow::Result<String> {
-    let path = std::path::Path::new(env!("OUT_DIR"))
-        .join("res")
-        .join(file_name);
+pub async fn load_bytes(sub_path: Option<&str>, file_name: &str) -> anyhow::Result<Vec<u8>> {
+    let path = build_path(sub_path, file_name);
+    Ok(std::fs::read(path)?)
+}
 
+/**
+ * TODO: This is being used for shaders (and maybe other future data types) and so is kept top-
+ * level. There shouldn't be top-level data, shaders and other data types should live in their
+ * own sub paths.
+ */
+
+pub async fn load_string(file_name: &str) -> anyhow::Result<String> {
+    let path = build_path(None, file_name);
     Ok(std::fs::read_to_string(path)?)
 }
 
