@@ -7,7 +7,8 @@ use crate::{
     camera::Camera,
     entity,
     graphics::{material, sprite, vertex, Graphics},
-    input, resources, ui_canvas,
+    input, resources,
+    ui::canvas,
 };
 
 pub struct State {
@@ -22,7 +23,7 @@ pub struct State {
     instant: Instant,
     last_n_ticks: LinkedList<u16>,
     tick_queue_len: usize,
-    ui_canvas: ui_canvas::UiCanvas,
+    ui_canvas: canvas::Canvas,
 }
 
 impl State {
@@ -79,9 +80,7 @@ impl State {
 
         let input = input::ReadOnlyInput::new();
 
-        let ui_canvas = ui_canvas::UiCanvas {
-            text: "hello world!".to_owned(),
-        };
+        let ui_canvas = canvas::Canvas::new();
 
         State {
             camera,
@@ -134,7 +133,9 @@ impl State {
         }
 
         let fps = self.last_n_ticks.iter().sum::<u16>() / self.tick_queue_len as u16;
-        self.ui_canvas.set_text(&format!("FPS: {fps}"));
+        self.ui_canvas
+            .get_element()
+            .set_body(&format!("FPS: {fps}"));
 
         self.instant = Instant::now();
 
@@ -143,7 +144,7 @@ impl State {
             &self.player,
             &self.wall,
             &self.materials,
-            &self.ui_canvas,
+            &mut self.ui_canvas,
         )
     }
 

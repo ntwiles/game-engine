@@ -33,7 +33,7 @@ use crate::{
     entity,
     graphics::texture::Texture, // this couldn't be imported within super::{} for some reason?
     resources,
-    ui_canvas::UiCanvas,
+    ui::canvas::Canvas,
 };
 
 const MAX_ENTITIES: usize = 24000;
@@ -226,7 +226,7 @@ impl Graphics {
         player: &Option<entity::Entity>,
         wall: &Option<entity::Entity>,
         materials: &Vec<material::Material>,
-        ui_canvas: &UiCanvas,
+        ui_canvas: &mut Canvas,
     ) -> Result<(), wgpu::SurfaceError> {
         let output = self.surface.get_current_texture()?;
 
@@ -275,13 +275,15 @@ impl Graphics {
 
         drop(render_pass);
 
+        let text = ui_canvas.get_element().get_body();
+
         self.text_brush.queue(Section {
             screen_position: (32.0, 32.0),
             bounds: (
                 self.surface_config.width as f32,
                 self.surface_config.height as f32,
             ),
-            text: vec![Text::new(&ui_canvas.text)
+            text: vec![Text::new(&text)
                 .with_color([0.0, 0.0, 0.0, 1.0])
                 .with_scale(20.0)],
             ..Section::default()
@@ -293,7 +295,7 @@ impl Graphics {
                 self.surface_config.width as f32,
                 self.surface_config.height as f32,
             ),
-            text: vec![Text::new(&ui_canvas.text)
+            text: vec![Text::new(&text)
                 .with_color([1.0, 1.0, 1.0, 1.0])
                 .with_scale(20.0)],
             ..Section::default()
