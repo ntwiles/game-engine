@@ -3,7 +3,8 @@ pub mod sprite;
 pub mod texture;
 pub mod vertex;
 
-use wgpu::util::DeviceExt;
+use image::{ImageBuffer, Rgba};
+use wgpu::{util::DeviceExt, Sampler, TextureView};
 use wgpu_glyph::{ab_glyph, GlyphBrush, GlyphBrushBuilder, Section, Text};
 use winit::window::Window;
 
@@ -12,9 +13,9 @@ pub struct Graphics {
     camera_buffer: wgpu::Buffer,
     camera_uniform: camera::CameraUniform,
     clear_color: wgpu::Color,
-    pub device: wgpu::Device,
+    device: wgpu::Device,
     index_buffer: wgpu::Buffer,
-    pub queue: wgpu::Queue,
+    queue: wgpu::Queue,
     render_pipeline: wgpu::RenderPipeline,
     staging_belt: wgpu::util::StagingBelt,
     surface: wgpu::Surface,
@@ -329,6 +330,52 @@ impl Graphics {
             offset as wgpu::BufferAddress,
             bytemuck::cast_slice(verts.as_slice()),
         );
+    }
+
+    pub fn create_texture(
+        &self,
+        label: &str,
+        size: wgpu::Extent3d,
+        image: ImageBuffer<Rgba<u8>, Vec<u8>>,
+    ) -> (wgpu::Texture, TextureView, Sampler) {
+        let texture = self.device.create_texture(&wgpu::TextureDescriptor {
+            label: Some(label),
+            size,
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format: wgpu::TextureFormat::Rgba8UnormSrgb,
+            usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
+        });
+
+        self.queue.write_texture(
+            wgpu::ImageCopyTexture {
+                aspect: wgpu::TextureAspect::All,
+                texture: &texture,
+                mip_level: 0,
+                origin: wgpu::Origin3d::ZERO,
+            },
+            &image,
+            wgpu::ImageDataLayout {
+                offset: 0,
+                bytes_per_row: std::num::NonZeroU32::new(4 * size.width),
+                rows_per_image: std::num::NonZeroU32::new(size.height),
+            },
+            size,
+        );
+
+        let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
+        let sampler = self.device.create_sampler(&wgpu::SamplerDescriptor {
+            address_mode_u: wgpu::AddressMode::ClampToEdge,
+            address_mode_v: wgpu::AddressMode::ClampToEdge,
+            address_mode_w: wgpu::AddressMode::ClampToEdge,
+            mag_filter: wgpu::FilterMode::Nearest,
+            min_filter: wgpu::FilterMode::Nearest,
+            mipmap_filter: wgpu::FilterMode::Nearest,
+            ..Default::default()
+        });
+
+        (texture, view, sampler)
     }
 
     pub fn create_texture_bind_group(

@@ -40,7 +40,7 @@ impl State {
 
         let mut graphics = Graphics::new(&window, &camera).await;
 
-        let grass_texture = resources::load_texture("grass.png", &graphics.device, &graphics.queue)
+        let grass_texture = resources::load_texture(&graphics, "grass.png")
             .await
             .unwrap();
 
