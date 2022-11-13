@@ -6,7 +6,6 @@ use super::Graphics;
 pub struct Texture {
     pub texture: wgpu::Texture,
     pub view: wgpu::TextureView,
-    pub sampler: wgpu::Sampler,
 }
 
 impl Texture {
@@ -25,12 +24,8 @@ impl Texture {
             depth_or_array_layers: 1,
         };
 
-        let (texture, view, sampler) = graphics.create_texture(label, size, buffer);
+        let (texture, view) = graphics.create_texture(label, size, buffer);
 
-        Ok(Self {
-            texture,
-            view,
-            sampler,
-        })
+        Ok(Self { texture, view })
     }
 }

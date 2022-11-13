@@ -22,6 +22,7 @@ pub struct Graphics {
     surface_config: wgpu::SurfaceConfiguration,
     text_brush: GlyphBrush<()>,
     texture_bind_group_layout: wgpu::BindGroupLayout,
+    texture_sampler: Sampler,
     vertex_buffer: wgpu::Buffer,
 }
 
@@ -189,6 +190,16 @@ impl Graphics {
 
         let staging_belt = wgpu::util::StagingBelt::new(1024);
 
+        let texture_sampler = device.create_sampler(&wgpu::SamplerDescriptor {
+            address_mode_u: wgpu::AddressMode::ClampToEdge,
+            address_mode_v: wgpu::AddressMode::ClampToEdge,
+            address_mode_w: wgpu::AddressMode::ClampToEdge,
+            mag_filter: wgpu::FilterMode::Nearest,
+            min_filter: wgpu::FilterMode::Nearest,
+            mipmap_filter: wgpu::FilterMode::Nearest,
+            ..Default::default()
+        });
+
         Graphics {
             camera_bind_group,
             camera_buffer,
@@ -202,6 +213,7 @@ impl Graphics {
             surface,
             surface_config,
             texture_bind_group_layout,
+            texture_sampler,
             text_brush,
             vertex_buffer,
         }
@@ -337,7 +349,7 @@ impl Graphics {
         label: &str,
         size: wgpu::Extent3d,
         image: ImageBuffer<Rgba<u8>, Vec<u8>>,
-    ) -> (wgpu::Texture, TextureView, Sampler) {
+    ) -> (wgpu::Texture, TextureView) {
         let texture = self.device.create_texture(&wgpu::TextureDescriptor {
             label: Some(label),
             size,
@@ -365,17 +377,8 @@ impl Graphics {
         );
 
         let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
-        let sampler = self.device.create_sampler(&wgpu::SamplerDescriptor {
-            address_mode_u: wgpu::AddressMode::ClampToEdge,
-            address_mode_v: wgpu::AddressMode::ClampToEdge,
-            address_mode_w: wgpu::AddressMode::ClampToEdge,
-            mag_filter: wgpu::FilterMode::Nearest,
-            min_filter: wgpu::FilterMode::Nearest,
-            mipmap_filter: wgpu::FilterMode::Nearest,
-            ..Default::default()
-        });
 
-        (texture, view, sampler)
+        (texture, view)
     }
 
     pub fn create_texture_bind_group(
@@ -392,7 +395,7 @@ impl Graphics {
                 },
                 wgpu::BindGroupEntry {
                     binding: 1,
-                    resource: wgpu::BindingResource::Sampler(&diffuse_texture.sampler),
+                    resource: wgpu::BindingResource::Sampler(&self.texture_sampler),
                 },
             ],
             label: Some(&format!("{name} Bind Group")),
