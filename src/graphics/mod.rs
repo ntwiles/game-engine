@@ -13,11 +13,11 @@ pub struct Graphics {
     camera_uniform: camera::CameraUniform,
     clear_color: wgpu::Color,
     pub device: wgpu::Device,
-    pub index_buffer: wgpu::Buffer,
+    index_buffer: wgpu::Buffer,
     pub queue: wgpu::Queue,
     render_pipeline: wgpu::RenderPipeline,
     staging_belt: wgpu::util::StagingBelt,
-    pub surface: wgpu::Surface,
+    surface: wgpu::Surface,
     surface_config: wgpu::SurfaceConfiguration,
     text_brush: GlyphBrush<()>,
     texture_bind_group_layout: wgpu::BindGroupLayout,
@@ -305,6 +305,32 @@ impl Graphics {
         Ok(())
     }
 
+    pub fn resize(&mut self, new_size: winit::dpi::PhysicalSize<u32>) {
+        self.surface_config.width = new_size.width;
+        self.surface_config.height = new_size.height;
+        self.surface.configure(&self.device, &self.surface_config);
+    }
+
+    pub fn write_camera(&mut self, camera: &camera::Camera) {
+        self.camera_uniform.update_view_proj(camera);
+
+        self.queue.write_buffer(
+            &self.camera_buffer,
+            0,
+            bytemuck::cast_slice(&[self.camera_uniform]),
+        );
+    }
+
+    pub fn write_entity(&mut self, id: usize, verts: Vec<vertex::RenderVertex>) {
+        let offset = std::mem::size_of::<vertex::RenderVertex>() * 4 * id;
+
+        self.queue.write_buffer(
+            &self.vertex_buffer,
+            offset as wgpu::BufferAddress,
+            bytemuck::cast_slice(verts.as_slice()),
+        );
+    }
+
     pub fn create_texture_bind_group(
         &self,
         name: &str,
@@ -324,32 +350,6 @@ impl Graphics {
             ],
             label: Some(&format!("{name} Bind Group")),
         })
-    }
-
-    pub fn write_camera(&mut self, camera: &camera::Camera) {
-        self.camera_uniform.update_view_proj(camera);
-
-        self.queue.write_buffer(
-            &self.camera_buffer,
-            0,
-            bytemuck::cast_slice(&[self.camera_uniform]),
-        );
-    }
-
-    pub fn resize(&mut self, new_size: winit::dpi::PhysicalSize<u32>) {
-        self.surface_config.width = new_size.width;
-        self.surface_config.height = new_size.height;
-        self.surface.configure(&self.device, &self.surface_config);
-    }
-
-    pub fn write_entity(&mut self, id: usize, verts: Vec<vertex::RenderVertex>) {
-        let offset = std::mem::size_of::<vertex::RenderVertex>() * 4 * id;
-
-        self.queue.write_buffer(
-            &self.vertex_buffer,
-            offset as wgpu::BufferAddress,
-            bytemuck::cast_slice(verts.as_slice()),
-        );
     }
 }
 
