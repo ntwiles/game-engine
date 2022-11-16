@@ -191,8 +191,6 @@ impl Graphics {
         let text_brush =
             GlyphBrushBuilder::using_font(inconsolata).build(&device, surface_config.format);
 
-        let staging_belt = wgpu::util::StagingBelt::new(1024);
-
         let texture_sampler = device.create_sampler(&wgpu::SamplerDescriptor {
             address_mode_u: wgpu::AddressMode::ClampToEdge,
             address_mode_v: wgpu::AddressMode::ClampToEdge,
@@ -212,7 +210,7 @@ impl Graphics {
             index_buffer,
             queue,
             render_pipeline,
-            staging_belt,
+            staging_belt: wgpu::util::StagingBelt::new(1024),
             surface,
             surface_config,
             texture_bind_group_layout,
@@ -278,9 +276,9 @@ impl Graphics {
 
         drop(render_pass);
 
-        let text = ui_canvas.root().body();
-
         if config.developer_mode() {
+            let text = ui_canvas.root().body();
+
             self.text_brush.queue(Section {
                 screen_position: (32.0, 32.0),
                 bounds: (
