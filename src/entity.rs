@@ -1,14 +1,15 @@
 use cgmath;
 
-use crate::{components, physics::collider, state::State};
+use crate::{components, graphics::sorting_layer, physics::collider, state::State};
 
 pub struct Entity {
-    position: cgmath::Vector2<f32>,
-    rotation: cgmath::Quaternion<f32>,
-    pub sprite_mat: usize,
     id: usize,
     pub collider: Option<collider::Collider>,
     pub components: Vec<Option<Box<dyn components::Component>>>,
+    position: cgmath::Vector2<f32>,
+    rotation: cgmath::Quaternion<f32>,
+    sorting_layer: sorting_layer::SortingLayer,
+    pub sprite_mat: usize,
 }
 
 impl Entity {
@@ -17,15 +18,17 @@ impl Entity {
         position: cgmath::Vector2<f32>,
         rotation: cgmath::Quaternion<f32>,
         sprite_mat: usize,
+        sorting_layer: sorting_layer::SortingLayer,
         collider: Option<collider::Collider>,
     ) -> Self {
         Self {
+            collider,
+            components: Vec::new(),
             id,
             position,
             rotation,
+            sorting_layer,
             sprite_mat,
-            collider,
-            components: Vec::new(),
         }
     }
 
@@ -39,6 +42,10 @@ impl Entity {
 
     pub fn get_rotation(&self) -> cgmath::Quaternion<f32> {
         self.rotation
+    }
+
+    pub fn get_sorting_layer(&self) -> sorting_layer::SortingLayer {
+        self.sorting_layer
     }
 
     pub fn move_by(&mut self, offset: cgmath::Vector2<f32>) {

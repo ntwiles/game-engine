@@ -1,7 +1,10 @@
 pub mod material;
+pub mod sorting_layer;
 pub mod sprite;
 pub mod texture;
 pub mod vertex;
+
+use std::collections::HashMap;
 
 use image::{ImageBuffer, Rgba};
 use wgpu::{util::DeviceExt, Sampler, TextureView};
@@ -224,7 +227,6 @@ impl Graphics {
         &mut self,
         entities: &Vec<Option<entity::Entity>>,
         player: &Option<entity::Entity>,
-        wall: &Option<entity::Entity>,
         materials: &Vec<material::Material>,
         ui_canvas: &mut Canvas,
         config: &Config,
@@ -260,18 +262,25 @@ impl Graphics {
         render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
         render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint32);
 
-        let mat_id = entities[0].as_ref().unwrap().sprite_mat;
-        let material = &materials[mat_id];
-        render_pass.draw_sprites(&material, 0..entities.len() as u32);
+        let grouped = group_by_sorting_layer(entities);
+
+        if let Some(background) = grouped.get(&sorting_layer::SortingLayer::Background) {
+            for (entity_id, sprite_mat_id) in background {
+                let material = &materials[*sprite_mat_id];
+                render_pass.draw_sprite(&material, *entity_id);
+            }
+        }
+
+        if let Some(foreground) = grouped.get(&sorting_layer::SortingLayer::Foreground) {
+            for (entity_id, sprite_mat_id) in foreground {
+                let material = &materials[*sprite_mat_id];
+                render_pass.draw_sprite(&material, *entity_id);
+            }
+        }
 
         if let Some(player) = player {
             let material = &materials[player.sprite_mat];
             render_pass.draw_sprite(&material, player.get_id());
-        }
-
-        if let Some(wall) = wall {
-            let material = &materials[wall.sprite_mat];
-            render_pass.draw_sprite(&material, wall.get_id());
         }
 
         drop(render_pass);
@@ -451,4 +460,28 @@ fn create_render_pipeline(
         },
         multiview: None,
     })
+}
+
+fn group_by_sorting_layer(
+    entities: &Vec<Option<entity::Entity>>,
+) -> HashMap<sorting_layer::SortingLayer, Vec<(usize, usize)>> {
+    entities
+        .into_iter()
+        .fold(HashMap::new(), |mut acc, entity| {
+            if let Some(entity) = entity {
+                let layer = entity.get_sorting_layer();
+                let value = (entity.get_id(), entity.sprite_mat);
+
+                match acc.get_mut(&layer) {
+                    Some(layer_vec) => layer_vec.push(value),
+                    None => {
+                        let mut layer_vec = Vec::new();
+                        layer_vec.push(value);
+                        acc.insert(layer, layer_vec);
+                    }
+                }
+            }
+
+            acc
+        })
 }

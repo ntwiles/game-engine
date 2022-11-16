@@ -30,19 +30,20 @@ impl Component for PlayerMovement {
             return;
         }
 
-        if let Some(player_coll) = &entity.collider {
-            if let Some(wall) = &state.wall {
-                if let Some(other_coll) = &wall.collider {
-                    if player_coll.cast(
-                        entity.get_position() + movement,
-                        &other_coll,
-                        wall.get_position(),
-                    ) {
-                        movement = cgmath::Vector2 { x: 0.0, y: 0.0 }
-                    }
-                }
-            }
-        }
+        // TODO: Replace this when state.wall has been moved to entities.
+        // if let Some(player_coll) = &entity.collider {
+        //     if let Some(wall) = &state.wall {
+        //         if let Some(other_coll) = &wall.collider {
+        //             if player_coll.cast(
+        //                 entity.get_position() + movement,
+        //                 &other_coll,
+        //                 wall.get_position(),
+        //             ) {
+        //                 movement = cgmath::Vector2 { x: 0.0, y: 0.0 }
+        //             }
+        //         }
+        //     }
+        // }
 
         entity.move_by(movement);
 

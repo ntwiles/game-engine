@@ -7,7 +7,7 @@ use crate::{
     camera::Camera,
     config::Config,
     entity,
-    graphics::{material, sprite, vertex, Graphics},
+    graphics::{material, sorting_layer, sprite, vertex, Graphics},
     input, resources,
     ui::canvas,
 };
@@ -17,7 +17,6 @@ pub struct State {
     config: Config,
     pub input: input::ReadOnlyInput,
     pub player: Option<entity::Entity>,
-    pub wall: Option<entity::Entity>,
     pub size: winit::dpi::PhysicalSize<u32>,
     pub graphics: Graphics,
     materials: Vec<material::Material>,
@@ -65,6 +64,7 @@ impl State {
                     },
                     Quaternion::zero(),
                     0,
+                    sorting_layer::SortingLayer::Background,
                     None,
                 );
 
@@ -75,7 +75,6 @@ impl State {
                 );
 
                 graphics.write_entity(entity.get_id(), verts);
-
                 entities.push(Some(entity));
             }
         }
@@ -88,7 +87,6 @@ impl State {
             input: input::ReadOnlyInput::new(),
             size,
             player: None,
-            wall: None,
             materials,
             instant: Instant::now(),
             last_n_ticks: LinkedList::new(),
@@ -139,11 +137,15 @@ impl State {
         self.graphics.render(
             &self.entities,
             &self.player,
-            &self.wall,
             &self.materials,
             &mut self.ui_canvas,
             &self.config,
         )
+    }
+
+    pub fn add_entity(&mut self, entity: entity::Entity) -> usize {
+        self.entities.push(Some(entity));
+        self.entities.len() - 1
     }
 
     pub fn add_material(&mut self, material: material::Material) -> usize {

@@ -18,7 +18,7 @@ use winit::{
 };
 
 use components::player_movement::PlayerMovement;
-use graphics::{material, sprite, vertex};
+use graphics::{material, sorting_layer, sprite, vertex};
 use input::Input;
 use physics::collider;
 
@@ -51,6 +51,7 @@ pub async fn run() {
         cgmath::Vector2::zero(),
         cgmath::Quaternion::zero(),
         material_id,
+        sorting_layer::SortingLayer::Foreground,
         Some(collider),
     );
 
@@ -75,6 +76,7 @@ pub async fn run() {
         cgmath::Vector2 { x: 3.0, y: 1.0 },
         cgmath::Quaternion::zero(),
         material_id,
+        sorting_layer::SortingLayer::Foreground,
         Some(collider),
     );
 
@@ -87,7 +89,7 @@ pub async fn run() {
     state.graphics.write_entity(wall.get_id(), verts);
 
     state.player = Some(player);
-    state.wall = Some(wall);
+    state.add_entity(wall);
 
     let mut input = Input::new();
 
