@@ -5,6 +5,7 @@ use winit::window::Window;
 
 use crate::{
     camera::Camera,
+    config::Config,
     entity,
     graphics::{material, sprite, vertex, Graphics},
     input, resources,
@@ -13,6 +14,7 @@ use crate::{
 
 pub struct State {
     pub camera: Camera,
+    config: Config,
     pub input: input::ReadOnlyInput,
     pub player: Option<entity::Entity>,
     pub wall: Option<entity::Entity>,
@@ -78,15 +80,12 @@ impl State {
             }
         }
 
-        let input = input::ReadOnlyInput::new();
-
-        let ui_canvas = canvas::Canvas::new();
-
         State {
             camera,
+            config: Config::new(),
             graphics,
             entities,
-            input,
+            input: input::ReadOnlyInput::new(),
             size,
             player: None,
             wall: None,
@@ -94,7 +93,7 @@ impl State {
             instant: Instant::now(),
             last_n_ticks: LinkedList::new(),
             tick_queue_len: 15,
-            ui_canvas,
+            ui_canvas: canvas::Canvas::new(),
         }
     }
 
@@ -143,6 +142,7 @@ impl State {
             &self.wall,
             &self.materials,
             &mut self.ui_canvas,
+            &self.config,
         )
     }
 

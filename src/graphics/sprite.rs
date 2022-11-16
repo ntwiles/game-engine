@@ -33,7 +33,6 @@ impl Sprite {
 
 pub trait DrawSprite<'a> {
     fn draw_sprite(&mut self, material: &'a material::Material, entity_id: usize);
-
     fn draw_sprites(&mut self, material: &'a material::Material, range: Range<u32>);
 }
 

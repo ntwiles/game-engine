@@ -1,5 +1,6 @@
 mod camera;
 mod components;
+mod config;
 mod entity;
 mod graphics;
 mod input;
@@ -9,6 +10,7 @@ mod state;
 mod ui;
 
 use cgmath::prelude::*;
+use dotenv::dotenv;
 use winit::{
     event::*,
     event_loop::{ControlFlow, EventLoop},
@@ -21,6 +23,7 @@ use input::Input;
 use physics::collider;
 
 pub async fn run() {
+    dotenv().ok();
     env_logger::init();
 
     let event_loop = EventLoop::new();
