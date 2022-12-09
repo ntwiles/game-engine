@@ -56,10 +56,10 @@ impl Entity {
         self.components.push(Some(component));
     }
 
-    pub fn update(&mut self, state: &mut State) {
+    pub fn update(&mut self, state: &mut State, delta_time: f64) {
         for i in 0..self.components.len() {
             if let Some(component) = self.components[i].take() {
-                component.update(self, state);
+                component.update(self, state, delta_time);
                 self.components[i] = Some(component);
             }
         }

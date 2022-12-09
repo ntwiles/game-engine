@@ -15,13 +15,14 @@ use crate::{
 pub struct State {
     pub camera: Camera,
     config: Config,
+    delta_time: f64,
     pub input: input::ReadOnlyInput,
     pub size: winit::dpi::PhysicalSize<u32>,
     pub graphics: Graphics,
     materials: Vec<material::Material>,
     entities: Vec<Option<entity::Entity>>,
     instant: Instant,
-    last_n_ticks: LinkedList<u16>,
+    last_n_ticks: LinkedList<f64>,
     tick_queue_len: usize,
     ui_canvas: canvas::Canvas,
 }
@@ -81,6 +82,7 @@ impl State {
         State {
             camera,
             config: Config::new(),
+            delta_time: 0.0,
             graphics,
             entities,
             input: input::ReadOnlyInput::new(),
@@ -103,10 +105,26 @@ impl State {
 
     pub fn update(&mut self, input: input::ReadOnlyInput) {
         self.input = input;
+        self.delta_time = self.instant.elapsed().as_micros() as f64 / 1_000_000.00;
+
+        if self.delta_time > 0.0 {
+            self.last_n_ticks.push_front(1.0 / self.delta_time as f64);
+        }
+
+        if self.last_n_ticks.len() > self.tick_queue_len {
+            self.last_n_ticks.pop_back();
+        }
+
+        let fps: f64 = self.last_n_ticks.iter().sum::<f64>() / self.tick_queue_len as f64;
+        let fps = fps.floor();
+
+        self.ui_canvas.root().set_body(&format!("FPS: {fps}"));
+
+        self.instant = Instant::now();
 
         for i in 0..self.entities.len() {
             if let Some(mut entity) = self.entities[i].take() {
-                entity.update(self);
+                entity.update(self, self.delta_time);
                 self.entities[i] = Some(entity);
             }
         }
@@ -115,18 +133,6 @@ impl State {
     }
 
     pub fn render(&mut self) -> Result<(), wgpu::SurfaceError> {
-        self.last_n_ticks
-            .push_front((1_000_000 / self.instant.elapsed().as_micros()) as u16);
-
-        if self.last_n_ticks.len() > self.tick_queue_len {
-            self.last_n_ticks.pop_back();
-        }
-
-        let fps = self.last_n_ticks.iter().sum::<u16>() / self.tick_queue_len as u16;
-        self.ui_canvas.root().set_body(&format!("FPS: {fps}"));
-
-        self.instant = Instant::now();
-
         self.graphics.render(
             &self.entities,
             &self.materials,

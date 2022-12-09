@@ -18,7 +18,7 @@ use winit::{
 };
 
 use components::player_movement::PlayerMovement;
-use graphics::{material, sorting_layer, sprite};
+use graphics::{material, sorting_layer};
 use input::Input;
 use physics::collider;
 
@@ -53,7 +53,7 @@ pub async fn run() {
         }),
     );
 
-    player.add_component(Box::new(PlayerMovement {}));
+    player.add_component(Box::new(PlayerMovement { walk_speed: 35.0 }));
     state.add_entity(player);
 
     state.add_entity(entity::Entity::create(

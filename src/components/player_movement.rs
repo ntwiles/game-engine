@@ -8,10 +8,12 @@ use crate::{
 
 use super::Component;
 
-pub struct PlayerMovement {}
+pub struct PlayerMovement {
+    pub walk_speed: f32,
+}
 
 impl Component for PlayerMovement {
-    fn update(&self, entity: &mut Entity, state: &mut State) {
+    fn update(&self, entity: &mut Entity, state: &mut State, delta_time: f64) {
         let mut movement = cgmath::Vector2::<f32>::zero();
 
         if state.input.is_left_pressed() {
@@ -45,7 +47,7 @@ impl Component for PlayerMovement {
         //     }
         // }
 
-        entity.move_by(movement);
+        entity.move_by(movement * self.walk_speed * delta_time as f32);
 
         let verts = vertex::RenderVertex::new(
             entity.get_position(),
