@@ -1,5 +1,5 @@
 pub struct Element {
-    pub id: String, // TODO: This should be hashed an uniqueness enforced.
+    pub id: String, // TODO: This should be hashed and uniqueness enforced.
     pub body: String,
     pub children: Box<Vec<Element>>,
 }

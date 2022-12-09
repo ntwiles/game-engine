@@ -18,7 +18,7 @@ use winit::{
 };
 
 use components::player_movement::PlayerMovement;
-use graphics::{material, sorting_layer, sprite, vertex};
+use graphics::{material, sorting_layer, sprite};
 use input::Input;
 use physics::collider;
 
@@ -31,65 +31,43 @@ pub async fn run() {
 
     let mut state = state::State::new(&window).await;
 
-    let dude_texture = resources::load_texture(&state.graphics, "ball.png")
+    let ball_texture = resources::load_texture(&state.graphics, "ball.png")
         .await
         .unwrap();
 
-    let dude_material =
-        material::Material::new(String::from("grass"), &state.graphics, dude_texture);
+    let ball_material =
+        material::Material::new(String::from("ball"), &state.graphics, ball_texture);
 
-    let material_id = state.add_material(dude_material);
-
-    let collider = collider::Collider {
-        origin: cgmath::Vector2::zero(),
-        width: 1.0,
-        height: 1.0,
-    };
+    let ball_mat_id = state.add_material(ball_material);
 
     let mut player = entity::Entity::create(
         state.num_entities(),
         cgmath::Vector2::zero(),
         cgmath::Quaternion::zero(),
-        material_id,
+        ball_mat_id,
         sorting_layer::SortingLayer::Foreground,
-        Some(collider),
+        Some(collider::Collider {
+            origin: cgmath::Vector2::zero(),
+            width: 1.0,
+            height: 1.0,
+        }),
     );
 
     player.add_component(Box::new(PlayerMovement {}));
+    state.add_entity(player);
 
-    let verts = vertex::RenderVertex::new(
-        player.get_position(),
-        player.get_rotation(),
-        &sprite::Sprite::get_vertices(),
-    );
-
-    state.graphics.write_entity(player.get_id(), verts);
-
-    let collider = collider::Collider {
-        origin: cgmath::Vector2::zero(),
-        width: 1.0,
-        height: 1.0,
-    };
-
-    let wall = entity::Entity::create(
+    state.add_entity(entity::Entity::create(
         state.num_entities() + 1,
         cgmath::Vector2 { x: 3.0, y: 1.0 },
         cgmath::Quaternion::zero(),
-        material_id,
+        ball_mat_id,
         sorting_layer::SortingLayer::Foreground,
-        Some(collider),
-    );
-
-    let verts = vertex::RenderVertex::new(
-        wall.get_position(),
-        wall.get_rotation(),
-        &sprite::Sprite::get_vertices(),
-    );
-
-    state.graphics.write_entity(wall.get_id(), verts);
-
-    state.add_entity(player);
-    state.add_entity(wall);
+        Some(collider::Collider {
+            origin: cgmath::Vector2::zero(),
+            width: 1.0,
+            height: 1.0,
+        }),
+    ));
 
     let mut input = Input::new();
 

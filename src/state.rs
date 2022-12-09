@@ -136,6 +136,13 @@ impl State {
     }
 
     pub fn add_entity(&mut self, entity: entity::Entity) -> usize {
+        let verts = vertex::RenderVertex::new(
+            entity.get_position(),
+            entity.get_rotation(),
+            &sprite::Sprite::get_vertices(),
+        );
+
+        self.graphics.write_entity(entity.get_id(), verts);
         self.entities.push(Some(entity));
         self.entities.len() - 1
     }
