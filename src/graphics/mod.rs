@@ -226,7 +226,6 @@ impl Graphics {
     pub fn render(
         &mut self,
         entities: &Vec<Option<entity::Entity>>,
-        player: &Option<entity::Entity>,
         materials: &Vec<material::Material>,
         ui_canvas: &mut Canvas,
         config: &Config,
@@ -276,11 +275,6 @@ impl Graphics {
                 let material = &materials[*sprite_mat_id];
                 render_pass.draw_sprite(&material, *entity_id);
             }
-        }
-
-        if let Some(player) = player {
-            let material = &materials[player.sprite_mat];
-            render_pass.draw_sprite(&material, player.get_id());
         }
 
         drop(render_pass);

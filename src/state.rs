@@ -16,7 +16,6 @@ pub struct State {
     pub camera: Camera,
     config: Config,
     pub input: input::ReadOnlyInput,
-    pub player: Option<entity::Entity>,
     pub size: winit::dpi::PhysicalSize<u32>,
     pub graphics: Graphics,
     materials: Vec<material::Material>,
@@ -86,7 +85,6 @@ impl State {
             entities,
             input: input::ReadOnlyInput::new(),
             size,
-            player: None,
             materials,
             instant: Instant::now(),
             last_n_ticks: LinkedList::new(),
@@ -113,11 +111,6 @@ impl State {
             }
         }
 
-        if let Some(mut player) = self.player.take() {
-            player.update(self);
-            self.player = Some(player);
-        }
-
         self.graphics.write_camera(&self.camera);
     }
 
@@ -136,7 +129,6 @@ impl State {
 
         self.graphics.render(
             &self.entities,
-            &self.player,
             &self.materials,
             &mut self.ui_canvas,
             &self.config,

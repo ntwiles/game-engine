@@ -88,7 +88,7 @@ pub async fn run() {
 
     state.graphics.write_entity(wall.get_id(), verts);
 
-    state.player = Some(player);
+    state.add_entity(player);
     state.add_entity(wall);
 
     let mut input = Input::new();
