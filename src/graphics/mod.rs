@@ -18,6 +18,7 @@ use self::pipeline::create_sprite_render_pipeline;
 use self::sprite::DrawSprite;
 use self::texture::Texture;
 
+// TODO: How many of these fields don't need to be here?
 pub struct Graphics {
     camera_bind_group: wgpu::BindGroup,
     camera_buffer: wgpu::Buffer,
