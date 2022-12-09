@@ -142,7 +142,7 @@ impl Graphics {
                 label: Some("camera_bind_group_layout"),
             });
 
-        let sprite_shader = resources::load_string("shader.wgsl").await.unwrap();
+        let sprite_shader = resources::load_string("sprite.wgsl").await.unwrap();
         let sprite_shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("Sprite Shader"),
             source: wgpu::ShaderSource::Wgsl(sprite_shader.into()),

@@ -1,13 +1,7 @@
 // Vertex shader
+
 struct CameraUniform {
     view_proj: mat4x4<f32>,
-};
-
-struct InstanceInput {
-    @location(5) model_matrix_0: vec4<f32>,
-    @location(6) model_matrix_1: vec4<f32>,
-    @location(7) model_matrix_2: vec4<f32>,
-    @location(8) model_matrix_3: vec4<f32>,
 };
 
 @group(1) @binding(0)
@@ -16,6 +10,10 @@ var<uniform> camera: CameraUniform;
 struct VertexInput {
     @location(0) position: vec3<f32>,
     @location(1) tex_coords: vec2<f32>,
+    @location(2) matrix_0: vec4<f32>,
+    @location(3) matrix_1: vec4<f32>,
+    @location(4) matrix_2: vec4<f32>,
+    @location(5) matrix_3: vec4<f32>,
 };
 
 struct VertexOutput {
@@ -26,17 +24,16 @@ struct VertexOutput {
 @vertex
 fn vs_main(
     model: VertexInput,
-    instance: InstanceInput,
 ) -> VertexOutput {
-    let model_matrix = mat4x4<f32>(
-        instance.model_matrix_0,
-        instance.model_matrix_1,
-        instance.model_matrix_2,
-        instance.model_matrix_3,
+    let transform = mat4x4<f32>(
+        model.matrix_0,
+        model.matrix_1,
+        model.matrix_2,
+        model.matrix_3,
     );
 
     var out: VertexOutput;
-    out.clip_position = camera.view_proj * model_matrix * vec4<f32>(model.position, 1.0);
+    out.clip_position = camera.view_proj * transform * vec4<f32>(model.position, 1.0);
     out.tex_coords = model.tex_coords;
     return out;
 }
@@ -45,7 +42,7 @@ fn vs_main(
 
 @group(0) @binding(0)
 var t_diffuse: texture_2d<f32>;
-@group(0)@binding(1)
+@group(0) @binding(1)
 var s_diffuse: sampler;
 
 @fragment
