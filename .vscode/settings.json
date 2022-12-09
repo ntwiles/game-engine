@@ -1,7 +1,7 @@
 {
   "editor.formatOnSave": true,
   "editor.defaultFormatter": "rust-lang.rust-analyzer",
-  "editor.rulers": [80],
+  // "editor.rulers": [80],
   "editor.semanticTokenColorCustomizations": {
     "enabled": true,
     "rules": {
