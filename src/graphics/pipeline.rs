@@ -63,3 +63,24 @@ pub async fn create_sprite_render_pipeline(
 
     new(sprite_shader, layout, device, config)
 }
+
+// TODO: Generalize this with the above function.
+pub async fn create_primitive_render_pipeline(
+    device: &wgpu::Device,
+    config: &wgpu::SurfaceConfiguration,
+    bind_group_layouts: &[&wgpu::BindGroupLayout],
+) -> wgpu::RenderPipeline {
+    let sprite_shader = resources::load_string("color.wgsl").await.unwrap();
+    let sprite_shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+        label: Some("Primitive Shader"),
+        source: wgpu::ShaderSource::Wgsl(sprite_shader.into()),
+    });
+
+    let layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+        label: Some("Render Pipeline Layout"),
+        bind_group_layouts,
+        push_constant_ranges: &[],
+    });
+
+    new(sprite_shader, layout, device, config)
+}

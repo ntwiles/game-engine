@@ -22,9 +22,7 @@ struct VertexOutput {
 };
 
 @vertex
-fn vs_main(
-    model: VertexInput,
-) -> VertexOutput {
+fn vs_main(model: VertexInput) -> VertexOutput {
     let transform = mat4x4<f32>(
         model.matrix_0,
         model.matrix_1,

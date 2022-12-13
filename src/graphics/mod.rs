@@ -14,7 +14,7 @@ use winit::window::Window;
 
 use crate::{camera, config::Config, entity, resources, ui::canvas::Canvas};
 
-use self::pipeline::create_sprite_render_pipeline;
+use self::pipeline::{create_primitive_render_pipeline, create_sprite_render_pipeline};
 use self::sprite::DrawSprite;
 use self::texture::Texture;
 
@@ -26,8 +26,9 @@ pub struct Graphics {
     clear_color: wgpu::Color,
     device: wgpu::Device,
     index_buffer: wgpu::Buffer,
+    primitive_render_pipeline: wgpu::RenderPipeline,
     queue: wgpu::Queue,
-    render_pipeline: wgpu::RenderPipeline,
+    sprite_render_pipeline: wgpu::RenderPipeline,
     staging_belt: wgpu::util::StagingBelt,
     surface: wgpu::Surface,
     surface_config: wgpu::SurfaceConfiguration,
@@ -139,10 +140,17 @@ impl Graphics {
                 label: Some("camera_bind_group_layout"),
             });
 
-        let render_pipeline = create_sprite_render_pipeline(
+        let sprite_render_pipeline = create_sprite_render_pipeline(
             &device,
             &surface_config,
             &[&texture_bind_group_layout, &camera_bind_group_layout],
+        )
+        .await;
+
+        let primitive_render_pipeline = create_primitive_render_pipeline(
+            &device,
+            &surface_config,
+            &[&texture_bind_group_layout],
         )
         .await;
 
@@ -195,8 +203,9 @@ impl Graphics {
             clear_color,
             device,
             index_buffer,
+            primitive_render_pipeline,
             queue,
-            render_pipeline,
+            sprite_render_pipeline,
             staging_belt: wgpu::util::StagingBelt::new(1024),
             surface,
             surface_config,
@@ -239,7 +248,7 @@ impl Graphics {
             depth_stencil_attachment: None,
         });
 
-        render_pass.set_pipeline(&self.render_pipeline);
+        render_pass.set_pipeline(&self.sprite_render_pipeline);
         render_pass.set_bind_group(1, &self.camera_bind_group, &[]);
 
         render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
