@@ -317,19 +317,7 @@ impl Graphics {
             render_pass.draw_indexed(index_start..index_end, 0, 0..1);
 
             self.text_brush.queue(Section {
-                screen_position: (32.0, 32.0),
-                bounds: (
-                    self.surface_config.width as f32,
-                    self.surface_config.height as f32,
-                ),
-                text: vec![Text::new(&element.body())
-                    .with_color([0.0, 0.0, 0.0, 1.0])
-                    .with_scale(20.0)],
-                ..Section::default()
-            });
-
-            self.text_brush.queue(Section {
-                screen_position: (30.0, 30.0),
+                screen_position: (0.0, 0.0),
                 bounds: (
                     self.surface_config.width as f32,
                     self.surface_config.height as f32,
