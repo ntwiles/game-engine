@@ -12,9 +12,14 @@ use wgpu::{util::DeviceExt, Sampler, TextureView};
 use wgpu_glyph::{GlyphBrush, GlyphBrushBuilder, Section, Text};
 use winit::window::Window;
 
-use crate::{camera, config::Config, entity, resources, ui::canvas::Canvas};
+use crate::{
+    camera,
+    config::Config,
+    entity, resources,
+    ui::{canvas::Canvas, ui_vertex::UiRenderVertex},
+};
 
-use self::pipeline::{create_primitive_render_pipeline, create_sprite_render_pipeline};
+use self::pipeline::{create_sprite_render_pipeline, create_ui_render_pipeline};
 use self::sprite::DrawSprite;
 use self::texture::Texture;
 
@@ -25,17 +30,19 @@ pub struct Graphics {
     camera_uniform: camera::CameraUniform,
     clear_color: wgpu::Color,
     device: wgpu::Device,
-    index_buffer: wgpu::Buffer,
-    primitive_render_pipeline: wgpu::RenderPipeline,
+    ui_render_pipeline: wgpu::RenderPipeline,
     queue: wgpu::Queue,
+    sprite_index_buffer: wgpu::Buffer,
     sprite_render_pipeline: wgpu::RenderPipeline,
+    sprite_vertex_buffer: wgpu::Buffer,
     staging_belt: wgpu::util::StagingBelt,
     surface: wgpu::Surface,
     surface_config: wgpu::SurfaceConfiguration,
     text_brush: GlyphBrush<()>,
     texture_bind_group_layout: wgpu::BindGroupLayout,
     texture_sampler: Sampler,
-    vertex_buffer: wgpu::Buffer,
+    ui_index_buffer: wgpu::Buffer,
+    ui_vertex_buffer: wgpu::Buffer,
 }
 
 const MAX_ENTITIES: usize = 24000;
@@ -79,9 +86,16 @@ impl Graphics {
 
         surface.configure(&device, &surface_config);
 
-        let vertex_buffer = device.create_buffer(&wgpu::BufferDescriptor {
+        let sprite_vertex_buffer = device.create_buffer(&wgpu::BufferDescriptor {
             size: std::mem::size_of::<[vertex::RenderVertex; MAX_ENTITIES * 4]>() as u64,
-            label: Some("Vertex Buffer"),
+            label: Some("Sprite Vertex Buffer"),
+            usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
+            mapped_at_creation: false,
+        });
+
+        let ui_vertex_buffer = device.create_buffer(&wgpu::BufferDescriptor {
+            size: std::mem::size_of::<[UiRenderVertex; MAX_ENTITIES * 4]>() as u64,
+            label: Some("UI Vertex Buffer"),
             usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
             mapped_at_creation: false,
         });
@@ -96,8 +110,27 @@ impl Graphics {
             indices.extend(new_indices);
         }
 
-        let index_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("Index Buffer"),
+        let sprite_index_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("Sprite Index Buffer"),
+            contents: bytemuck::cast_slice(indices.as_slice()),
+            usage: wgpu::BufferUsages::INDEX | wgpu::BufferUsages::COPY_DST,
+        });
+
+        // TODO: Should the ui share an index buffer with sprites? If not, should we be using the same
+        // max size?
+
+        let mut indices = Vec::<u32>::new();
+
+        for i in 0..MAX_ENTITIES {
+            let new_indices = sprite::Sprite::get_indices()
+                .into_iter()
+                .map(|idx| idx + (4 * i as u32));
+
+            indices.extend(new_indices);
+        }
+
+        let ui_index_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("UI Index Buffer"),
             contents: bytemuck::cast_slice(indices.as_slice()),
             usage: wgpu::BufferUsages::INDEX | wgpu::BufferUsages::COPY_DST,
         });
@@ -147,12 +180,7 @@ impl Graphics {
         )
         .await;
 
-        let primitive_render_pipeline = create_primitive_render_pipeline(
-            &device,
-            &surface_config,
-            &[&texture_bind_group_layout],
-        )
-        .await;
+        let ui_render_pipeline = create_ui_render_pipeline(&device, &surface_config, &[]).await;
 
         let clear_color = wgpu::Color {
             r: 0.0,
@@ -202,17 +230,19 @@ impl Graphics {
             camera_uniform,
             clear_color,
             device,
-            index_buffer,
-            primitive_render_pipeline,
             queue,
+            sprite_index_buffer,
             sprite_render_pipeline,
+            sprite_vertex_buffer,
             staging_belt: wgpu::util::StagingBelt::new(1024),
             surface,
             surface_config,
             texture_bind_group_layout,
             texture_sampler,
             text_brush,
-            vertex_buffer,
+            ui_index_buffer,
+            ui_render_pipeline,
+            ui_vertex_buffer,
         }
     }
 
@@ -251,8 +281,11 @@ impl Graphics {
         render_pass.set_pipeline(&self.sprite_render_pipeline);
         render_pass.set_bind_group(1, &self.camera_bind_group, &[]);
 
-        render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
-        render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint32);
+        render_pass.set_vertex_buffer(0, self.sprite_vertex_buffer.slice(..));
+        render_pass.set_index_buffer(
+            self.sprite_index_buffer.slice(..),
+            wgpu::IndexFormat::Uint32,
+        );
 
         let grouped = group_by_sorting_layer(entities);
 
@@ -270,10 +303,18 @@ impl Graphics {
             }
         }
 
-        drop(render_pass);
+        render_pass.set_pipeline(&self.ui_render_pipeline);
 
         if config.developer_mode() {
-            let text = ui_canvas.root().body();
+            let element = ui_canvas.root();
+
+            render_pass.set_vertex_buffer(0, self.ui_vertex_buffer.slice(..));
+            render_pass.set_index_buffer(self.ui_index_buffer.slice(..), wgpu::IndexFormat::Uint32);
+
+            let index_start = element.id as u32;
+            let index_end = element.id as u32 + 6;
+
+            render_pass.draw_indexed(index_start..index_end, 0, 0..1);
 
             self.text_brush.queue(Section {
                 screen_position: (32.0, 32.0),
@@ -281,7 +322,7 @@ impl Graphics {
                     self.surface_config.width as f32,
                     self.surface_config.height as f32,
                 ),
-                text: vec![Text::new(&text)
+                text: vec![Text::new(&element.body())
                     .with_color([0.0, 0.0, 0.0, 1.0])
                     .with_scale(20.0)],
                 ..Section::default()
@@ -293,12 +334,14 @@ impl Graphics {
                     self.surface_config.width as f32,
                     self.surface_config.height as f32,
                 ),
-                text: vec![Text::new(&text)
+                text: vec![Text::new(&element.body())
                     .with_color([1.0, 1.0, 1.0, 1.0])
                     .with_scale(20.0)],
                 ..Section::default()
             });
         }
+
+        drop(render_pass);
 
         self.text_brush
             .draw_queued(
@@ -341,7 +384,17 @@ impl Graphics {
         let offset = std::mem::size_of::<vertex::RenderVertex>() * 4 * id;
 
         self.queue.write_buffer(
-            &self.vertex_buffer,
+            &self.sprite_vertex_buffer,
+            offset as wgpu::BufferAddress,
+            bytemuck::cast_slice(verts.as_slice()),
+        );
+    }
+
+    pub fn write_ui_element(&mut self, id: usize, verts: Vec<UiRenderVertex>) {
+        let offset = std::mem::size_of::<UiRenderVertex>() * 4 * id;
+
+        self.queue.write_buffer(
+            &self.ui_vertex_buffer,
             offset as wgpu::BufferAddress,
             bytemuck::cast_slice(verts.as_slice()),
         );

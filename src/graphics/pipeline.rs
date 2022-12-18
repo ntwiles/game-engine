@@ -1,4 +1,4 @@
-use crate::resources;
+use crate::{resources, ui::ui_vertex};
 
 use super::vertex;
 
@@ -7,14 +7,16 @@ fn new(
     layout: wgpu::PipelineLayout,
     device: &wgpu::Device,
     config: &wgpu::SurfaceConfiguration,
+    label: &str,
+    buffer_layout: wgpu::VertexBufferLayout,
 ) -> wgpu::RenderPipeline {
     device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-        label: Some("Render Pipeline"),
+        label: Some(label),
         layout: Some(&layout),
         vertex: wgpu::VertexState {
             module: &shader,
             entry_point: "vs_main",
-            buffers: &[vertex::RenderVertex::desc()],
+            buffers: &[buffer_layout],
         },
         fragment: Some(wgpu::FragmentState {
             module: &shader,
@@ -56,16 +58,23 @@ pub async fn create_sprite_render_pipeline(
     });
 
     let layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-        label: Some("Render Pipeline Layout"),
+        label: Some("Sprite Render Pipeline Layout"),
         bind_group_layouts,
         push_constant_ranges: &[],
     });
 
-    new(sprite_shader, layout, device, config)
+    new(
+        sprite_shader,
+        layout,
+        device,
+        config,
+        "Sprite Render Pipeline",
+        vertex::RenderVertex::desc(),
+    )
 }
 
 // TODO: Generalize this with the above function.
-pub async fn create_primitive_render_pipeline(
+pub async fn create_ui_render_pipeline(
     device: &wgpu::Device,
     config: &wgpu::SurfaceConfiguration,
     bind_group_layouts: &[&wgpu::BindGroupLayout],
@@ -77,10 +86,17 @@ pub async fn create_primitive_render_pipeline(
     });
 
     let layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-        label: Some("Render Pipeline Layout"),
+        label: Some("UI Render Pipeline Layout"),
         bind_group_layouts,
         push_constant_ranges: &[],
     });
 
-    new(sprite_shader, layout, device, config)
+    new(
+        sprite_shader,
+        layout,
+        device,
+        config,
+        "UI Render Pipeline",
+        ui_vertex::UiRenderVertex::desc(),
+    )
 }

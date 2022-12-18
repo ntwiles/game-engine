@@ -1,15 +1,20 @@
 use std::{collections::LinkedList, time::Instant};
 
 use cgmath::{prelude::*, Quaternion};
+use wgpu::Color;
 use winit::window::Window;
 
 use crate::{
     camera::Camera,
     config::Config,
     entity,
-    graphics::{material, sorting_layer, sprite, vertex, Graphics},
+    graphics::{
+        material, sorting_layer,
+        sprite::{self, Sprite},
+        vertex, Graphics,
+    },
     input, resources,
-    ui::canvas,
+    ui::{canvas, ui_vertex::UiRenderVertex},
 };
 
 pub struct State {
@@ -130,6 +135,28 @@ impl State {
         }
 
         self.graphics.write_camera(&self.camera);
+
+        let verts = [
+            vertex::Vertex {
+                position: [-0.9, 0.9, 0.0],
+                tex_coords: [0.0, 0.0],
+            },
+            vertex::Vertex {
+                position: [-0.9, -0.9, 0.0],
+                tex_coords: [0.0, 1.0],
+            },
+            vertex::Vertex {
+                position: [0.9, -0.9, 0.0],
+                tex_coords: [1.0, 1.0],
+            },
+            vertex::Vertex {
+                position: [0.9, 0.9, 0.0],
+                tex_coords: [1.0, 0.0],
+            },
+        ];
+
+        let verts = UiRenderVertex::new(&verts, Color::BLACK);
+        self.graphics.write_ui_element(0, verts);
     }
 
     pub fn render(&mut self) -> Result<(), wgpu::SurfaceError> {

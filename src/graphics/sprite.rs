@@ -1,7 +1,6 @@
-use std::ops::Range;
-
 use super::{material, vertex};
 
+// TODO: Why is this an object with associated functions instead of just free functions?
 pub struct Sprite;
 
 impl Sprite {
@@ -33,7 +32,6 @@ impl Sprite {
 
 pub trait DrawSprite<'a> {
     fn draw_sprite(&mut self, material: &'a material::Material, entity_id: usize);
-    fn draw_sprites(&mut self, material: &'a material::Material, range: Range<u32>);
 }
 
 impl<'a, 'b> DrawSprite<'b> for wgpu::RenderPass<'a>
@@ -45,10 +43,5 @@ where
         let index_end = index_start + 6;
         self.set_bind_group(0, &material.bind_group, &[]);
         self.draw_indexed(index_start..index_end, 0, 0..1);
-    }
-
-    fn draw_sprites(&mut self, material: &'b material::Material, range: Range<u32>) {
-        self.set_bind_group(0, &material.bind_group, &[]);
-        self.draw_indexed(range, 0, 0..1);
     }
 }
