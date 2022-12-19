@@ -17,7 +17,11 @@ use crate::{
     config::Config,
     entity,
     resources::Resource,
-    ui::{canvas::Canvas, element::ElementBody, ui_vertex::UiRenderVertex},
+    ui::{
+        canvas::Canvas,
+        element::{DrawElement, ElementBody},
+        ui_vertex::UiRenderVertex,
+    },
 };
 
 use self::pipeline::{create_sprite_render_pipeline, create_ui_render_pipeline};
@@ -312,26 +316,14 @@ impl Graphics {
             render_pass.set_vertex_buffer(0, self.ui_vertex_buffer.slice(..));
             render_pass.set_index_buffer(self.ui_index_buffer.slice(..), wgpu::IndexFormat::Uint32);
 
-            let index_start = element.render_id as u32;
-            let index_end = element.render_id as u32 + 6;
-
-            render_pass.draw_indexed(index_start..index_end, 0, 0..1);
-
-            let body = element.body();
-
-            if let ElementBody::Content(content) = body {
-                self.text_brush.queue(Section {
-                    screen_position: (0.0, 0.0),
-                    bounds: (
-                        self.surface_config.width as f32,
-                        self.surface_config.height as f32,
-                    ),
-                    text: vec![Text::new(&content)
-                        .with_color([1.0, 1.0, 1.0, 1.0])
-                        .with_scale(20.0)],
-                    ..Section::default()
-                });
-            }
+            render_pass.draw_element(
+                element,
+                &mut self.text_brush,
+                (
+                    self.surface_config.width as f32,
+                    self.surface_config.height as f32,
+                ),
+            );
         }
 
         drop(render_pass);
