@@ -13,7 +13,9 @@ use crate::{
         sprite::{self},
         vertex, Graphics,
     },
-    input, resources,
+    input,
+    parsing::LoadNml,
+    resources::Resource,
     ui::{canvas, ui_vertex::UiRenderVertex},
 };
 
@@ -46,7 +48,7 @@ impl State {
 
         let mut graphics = Graphics::new(&window, &camera).await;
 
-        let grass_texture = resources::load_texture(&graphics, "grass.png")
+        let grass_texture = Resource::load_texture(&graphics, "grass.png")
             .await
             .unwrap();
 
@@ -84,6 +86,9 @@ impl State {
             }
         }
 
+        let ui_root = Resource::load_nml("debug.nml").unwrap();
+        let ui_canvas = canvas::Canvas::new(ui_root);
+
         State {
             camera,
             config: Config::new(),
@@ -96,7 +101,7 @@ impl State {
             instant: Instant::now(),
             last_n_ticks: LinkedList::new(),
             tick_queue_len: 15,
-            ui_canvas: canvas::Canvas::new(),
+            ui_canvas,
         }
     }
 
@@ -123,7 +128,7 @@ impl State {
         let fps: f64 = self.last_n_ticks.iter().sum::<f64>() / self.tick_queue_len as f64;
         let fps = fps.floor();
 
-        self.ui_canvas.root().set_body(&format!("FPS: {fps}"));
+        // self.ui_canvas.root().set_body(&format!("FPS: {fps}"));
 
         self.instant = Instant::now();
 
@@ -159,6 +164,8 @@ impl State {
         ];
 
         let verts = UiRenderVertex::new(&verts, Color::BLACK);
+
+        // TODO: right now we're doing this update every tick, regardless of whether the element is dirty.
         self.graphics.write_ui_element(0, verts);
     }
 

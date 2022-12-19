@@ -1,15 +1,20 @@
+pub enum ElementBody {
+    Child(Element),
+    Content(String),
+}
+
 pub struct Element {
-    pub id: usize,
-    pub body: String,
-    pub children: Box<Vec<Element>>,
+    pub render_id: usize,
+    pub script_id: Option<String>,
+    pub body: Box<ElementBody>,
 }
 
 impl Element {
-    pub fn body(&self) -> String {
-        self.body.clone()
+    pub fn body(&self) -> &ElementBody {
+        &*self.body
     }
 
-    pub fn set_body(&mut self, body: &str) {
-        self.body = body.to_owned();
+    pub fn set_body_text(&mut self, content: &str) {
+        self.body = Box::new(ElementBody::Content(content.to_owned()));
     }
 }

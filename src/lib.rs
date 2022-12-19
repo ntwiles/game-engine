@@ -4,6 +4,7 @@ mod config;
 mod entity;
 mod graphics;
 mod input;
+mod parsing;
 mod physics;
 mod resources;
 mod state;
@@ -21,6 +22,7 @@ use components::player_movement::PlayerMovement;
 use graphics::{material, sorting_layer};
 use input::Input;
 use physics::collider;
+use resources::Resource;
 
 pub async fn run() {
     dotenv().ok();
@@ -31,7 +33,7 @@ pub async fn run() {
 
     let mut state = state::State::new(&window).await;
 
-    let ball_texture = resources::load_texture(&state.graphics, "ball.png")
+    let ball_texture = Resource::load_texture(&state.graphics, "ball.png")
         .await
         .unwrap();
 

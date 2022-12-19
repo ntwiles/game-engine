@@ -1,4 +1,4 @@
-use crate::{resources, ui::ui_vertex};
+use crate::{resources::Resource, ui::ui_vertex};
 
 use super::vertex;
 
@@ -51,7 +51,7 @@ pub async fn create_sprite_render_pipeline(
     config: &wgpu::SurfaceConfiguration,
     bind_group_layouts: &[&wgpu::BindGroupLayout],
 ) -> wgpu::RenderPipeline {
-    let sprite_shader = resources::load_string("sprite.wgsl").await.unwrap();
+    let sprite_shader = Resource::load_string("sprite.wgsl").await.unwrap();
     let sprite_shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
         label: Some("Sprite Shader"),
         source: wgpu::ShaderSource::Wgsl(sprite_shader.into()),
@@ -79,7 +79,7 @@ pub async fn create_ui_render_pipeline(
     config: &wgpu::SurfaceConfiguration,
     bind_group_layouts: &[&wgpu::BindGroupLayout],
 ) -> wgpu::RenderPipeline {
-    let sprite_shader = resources::load_string("color.wgsl").await.unwrap();
+    let sprite_shader = Resource::load_string("color.wgsl").await.unwrap();
     let sprite_shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
         label: Some("Primitive Shader"),
         source: wgpu::ShaderSource::Wgsl(sprite_shader.into()),
