@@ -16,7 +16,7 @@ use crate::{
     input,
     parsing::LoadNml,
     resources::Resource,
-    ui::{canvas, ui_vertex::UiRenderVertex},
+    ui::{canvas, element, ui_vertex::UiRenderVertex},
 };
 
 pub struct State {
@@ -141,7 +141,6 @@ impl State {
 
         self.graphics.write_camera(&self.camera);
 
-        let line_height = 0.07;
         let start_pos = cgmath::Vector2::<f32>::new(-1.0, 1.0);
 
         let verts = [
@@ -150,11 +149,19 @@ impl State {
                 tex_coords: [0.0, 0.0],
             },
             vertex::Vertex {
-                position: [start_pos.x, start_pos.y - line_height, 0.0],
+                position: [
+                    start_pos.x,
+                    start_pos.y - element::DEFAULT_LINE_HEIGHT - (2.0 * element::DEFAULT_PADDING.y),
+                    0.0,
+                ],
                 tex_coords: [0.0, 1.0],
             },
             vertex::Vertex {
-                position: [1.0, start_pos.y - line_height, 0.0],
+                position: [
+                    1.0,
+                    start_pos.y - element::DEFAULT_LINE_HEIGHT - (2.0 * element::DEFAULT_PADDING.y),
+                    0.0,
+                ],
                 tex_coords: [1.0, 1.0],
             },
             vertex::Vertex {

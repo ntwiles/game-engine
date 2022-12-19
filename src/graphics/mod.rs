@@ -7,6 +7,7 @@ pub mod vertex;
 
 use std::collections::HashMap;
 
+use cgmath::Zero;
 use image::{ImageBuffer, Rgba};
 use wgpu::{util::DeviceExt, Sampler, TextureView};
 use wgpu_glyph::{GlyphBrush, GlyphBrushBuilder, Section, Text};
@@ -318,10 +319,11 @@ impl Graphics {
             render_pass.draw_element(
                 element,
                 &mut self.text_brush,
-                (
-                    self.surface_config.width as f32,
-                    self.surface_config.height as f32,
-                ),
+                cgmath::Vector2 {
+                    x: self.surface_config.width as f32,
+                    y: self.surface_config.height as f32,
+                },
+                cgmath::Vector2::zero(),
             );
         }
 
