@@ -8,11 +8,11 @@ pub struct UiRenderVertex {
 }
 
 impl UiRenderVertex {
-    pub fn new(verts: &[Vertex], color: wgpu::Color) -> Vec<Self> {
+    pub fn new(verts: &[cgmath::Vector2<f32>], color: wgpu::Color) -> Vec<Self> {
         verts
             .iter()
             .map(|v| Self {
-                position: v.position,
+                position: [v.x, v.y, 0.0],
                 color: [color.r as f32, color.g as f32, color.b as f32],
             })
             .collect::<Vec<_>>()

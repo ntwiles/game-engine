@@ -141,33 +141,13 @@ impl State {
 
         self.graphics.write_camera(&self.camera);
 
-        let start_pos = cgmath::Vector2::<f32>::new(-1.0, 1.0);
+        let bottom = 1.0 - element::DEFAULT_LINE_HEIGHT - (2.0 * element::DEFAULT_PADDING.y);
 
         let verts = [
-            vertex::Vertex {
-                position: [start_pos.x, start_pos.y, 0.0],
-                tex_coords: [0.0, 0.0],
-            },
-            vertex::Vertex {
-                position: [
-                    start_pos.x,
-                    start_pos.y - element::DEFAULT_LINE_HEIGHT - (2.0 * element::DEFAULT_PADDING.y),
-                    0.0,
-                ],
-                tex_coords: [0.0, 1.0],
-            },
-            vertex::Vertex {
-                position: [
-                    1.0,
-                    start_pos.y - element::DEFAULT_LINE_HEIGHT - (2.0 * element::DEFAULT_PADDING.y),
-                    0.0,
-                ],
-                tex_coords: [1.0, 1.0],
-            },
-            vertex::Vertex {
-                position: [1.0, start_pos.y, 0.0],
-                tex_coords: [1.0, 0.0],
-            },
+            cgmath::Vector2::<f32>::new(-1.0, 1.0),
+            cgmath::Vector2::<f32>::new(-1.0, bottom),
+            cgmath::Vector2::new(1.0, bottom),
+            cgmath::Vector2::new(1.0, 1.0),
         ];
 
         let verts = UiRenderVertex::new(&verts, Color::BLACK);
