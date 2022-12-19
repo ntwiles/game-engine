@@ -309,12 +309,11 @@ impl Graphics {
         }
 
         render_pass.set_pipeline(&self.ui_render_pipeline);
+        render_pass.set_vertex_buffer(0, self.ui_vertex_buffer.slice(..));
+        render_pass.set_index_buffer(self.ui_index_buffer.slice(..), wgpu::IndexFormat::Uint32);
 
         if config.developer_mode() {
             let element = ui_canvas.root();
-
-            render_pass.set_vertex_buffer(0, self.ui_vertex_buffer.slice(..));
-            render_pass.set_index_buffer(self.ui_index_buffer.slice(..), wgpu::IndexFormat::Uint32);
 
             render_pass.draw_element(
                 element,

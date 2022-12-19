@@ -47,15 +47,20 @@ where
 
         let body = element.body();
 
-        if let ElementBody::Content(content) = body {
-            text_brush.queue(Section {
-                screen_position: (0.0, 0.0),
-                bounds,
-                text: vec![Text::new(&content)
-                    .with_color([1.0, 1.0, 1.0, 1.0])
-                    .with_scale(20.0)],
-                ..Section::default()
-            });
+        match body {
+            ElementBody::Content(content) => draw_content(content, text_brush, bounds),
+            ElementBody::Child(child) => self.draw_element(child, text_brush, bounds),
         }
     }
+}
+
+fn draw_content(content: &str, text_brush: &mut GlyphBrush<()>, bounds: (f32, f32)) {
+    text_brush.queue(Section {
+        screen_position: (0.0, 0.0),
+        bounds,
+        text: vec![Text::new(&content)
+            .with_color([1.0, 1.0, 1.0, 1.0])
+            .with_scale(20.0)],
+        ..Section::default()
+    })
 }
