@@ -1,5 +1,3 @@
-use crate::graphics::vertex::Vertex;
-
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct UiRenderVertex {

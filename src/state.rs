@@ -87,6 +87,8 @@ impl State {
         }
 
         let ui_root = Resource::load_nml("debug.nml").unwrap();
+        ui_root.update(&mut graphics, cgmath::Vector2 { x: -1.0, y: 1.0 });
+
         let ui_canvas = canvas::Canvas::new(ui_root);
 
         State {
@@ -140,20 +142,6 @@ impl State {
         }
 
         self.graphics.write_camera(&self.camera);
-
-        let bottom = 1.0 - element::DEFAULT_LINE_HEIGHT - (2.0 * element::DEFAULT_PADDING.y);
-
-        let verts = [
-            cgmath::Vector2::<f32>::new(-1.0, 1.0),
-            cgmath::Vector2::<f32>::new(-1.0, bottom),
-            cgmath::Vector2::new(1.0, bottom),
-            cgmath::Vector2::new(1.0, 1.0),
-        ];
-
-        let verts = UiRenderVertex::new(&verts, Color::BLACK);
-
-        // TODO: right now we're doing this update every tick, regardless of whether the element is dirty.
-        self.graphics.write_ui_element(0, verts);
     }
 
     pub fn render(&mut self) -> Result<(), wgpu::SurfaceError> {
