@@ -1,7 +1,6 @@
 use std::{collections::LinkedList, time::Instant};
 
 use cgmath::{prelude::*, Quaternion};
-use wgpu::Color;
 use winit::window::Window;
 
 use crate::{
@@ -16,7 +15,7 @@ use crate::{
     input,
     parsing::LoadNml,
     resources::Resource,
-    ui::{canvas, element, ui_vertex::UiRenderVertex},
+    ui::canvas,
 };
 
 pub struct State {
@@ -127,8 +126,8 @@ impl State {
             self.last_n_ticks.pop_back();
         }
 
-        let fps: f64 = self.last_n_ticks.iter().sum::<f64>() / self.tick_queue_len as f64;
-        let fps = fps.floor();
+        // let fps: f64 = self.last_n_ticks.iter().sum::<f64>() / self.tick_queue_len as f64;
+        // let fps = fps.floor();
 
         // self.ui_canvas.root().set_body(&format!("FPS: {fps}"));
 

@@ -10,7 +10,7 @@ use std::collections::HashMap;
 use cgmath::Zero;
 use image::{ImageBuffer, Rgba};
 use wgpu::{util::DeviceExt, Sampler, TextureView};
-use wgpu_glyph::{GlyphBrush, GlyphBrushBuilder, Section, Text};
+use wgpu_glyph::{GlyphBrush, GlyphBrushBuilder};
 use winit::window::Window;
 
 use crate::{
@@ -18,11 +18,7 @@ use crate::{
     config::Config,
     entity,
     resources::Resource,
-    ui::{
-        canvas::Canvas,
-        element::{DrawElement, ElementBody},
-        ui_vertex::UiRenderVertex,
-    },
+    ui::{canvas::Canvas, element::DrawElement, ui_vertex::UiRenderVertex},
 };
 
 use self::pipeline::{create_sprite_render_pipeline, create_ui_render_pipeline};

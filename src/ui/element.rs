@@ -1,7 +1,7 @@
 use wgpu::Color;
 use wgpu_glyph::{GlyphBrush, Section, Text};
 
-use crate::{graphics::Graphics, state::State};
+use crate::graphics::Graphics;
 
 use super::ui_vertex::UiRenderVertex;
 
@@ -24,9 +24,9 @@ impl Element {
         &self.body
     }
 
-    pub fn set_body_text(&mut self, content: &str) {
-        self.body = Some(ElementBody::Content(content.to_owned()));
-    }
+    // pub fn set_body_text(&mut self, content: &str) {
+    //     self.body = Some(ElementBody::Content(content.to_owned()));
+    // }
 
     pub fn update(&self, graphics: &mut Graphics, starting_position: cgmath::Vector2<f32>) -> f32 {
         let body_height = match &self.body {
@@ -48,8 +48,6 @@ impl Element {
         starting_position: cgmath::Vector2<f32>,
         height: f32,
     ) {
-        println!("Staring position: {starting_position:?}, height: {height}");
-
         let verts = [
             starting_position,
             cgmath::Vector2 {
@@ -68,8 +66,10 @@ impl Element {
 
         let color = if self.render_id == 0 {
             Color::BLACK
+        } else if self.render_id == 1 {
+            Color::GREEN
         } else {
-            Color::RED
+            Color::BLACK
         };
 
         let render_verts = UiRenderVertex::new(&verts, color);
@@ -126,8 +126,13 @@ fn draw_content(
     bounds: cgmath::Vector2<f32>,
     position: cgmath::Vector2<f32>,
 ) {
+    let draw_position = cgmath::Vector2::new(
+        (position.x / 2.0) * bounds.x,
+        (-position.y / 2.0) * bounds.y,
+    );
+
     text_brush.queue(Section {
-        screen_position: (position.x, position.y),
+        screen_position: (draw_position.x, draw_position.y),
         bounds: (bounds.x, bounds.y),
         text: vec![Text::new(&content)
             .with_color([1.0, 1.0, 1.0, 1.0])
