@@ -57,8 +57,6 @@ fn capture_body(stream: &mut Peekable<Chars>, count: &mut usize) -> ElementBody 
 }
 
 fn capture_content(stream: &mut Peekable<Chars>, first_char: char) -> String {
-    println!("First char: {first_char}");
-
     let mut content = first_char.to_string();
 
     while let Some(c) = stream.next() {
@@ -68,8 +66,6 @@ fn capture_content(stream: &mut Peekable<Chars>, first_char: char) -> String {
 
         content += &c.to_string();
     }
-
-    println!("Content: {content}");
 
     content.trim().to_owned()
 }

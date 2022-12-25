@@ -1,1 +1,5 @@
-<root><box><nested>This will print on screen nested twice.</nested></box></root>
+<root>
+    <box>
+        <nested>This will print on screen nested twice.</nested>
+    </box>
+</root>
