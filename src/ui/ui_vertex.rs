@@ -7,11 +7,13 @@ pub struct UiRenderVertex {
 
 impl UiRenderVertex {
     pub fn new(verts: &[cgmath::Vector2<f32>], color: wgpu::Color) -> Vec<Self> {
+        let color = [color.r as f32, color.g as f32, color.b as f32];
+
         verts
             .iter()
             .map(|v| Self {
                 position: [v.x, v.y, 0.0],
-                color: [color.r as f32, color.g as f32, color.b as f32],
+                color,
             })
             .collect::<Vec<_>>()
     }
@@ -29,7 +31,7 @@ impl UiRenderVertex {
                 wgpu::VertexAttribute {
                     offset: std::mem::size_of::<[f32; 3]>() as wgpu::BufferAddress,
                     shader_location: 1,
-                    format: wgpu::VertexFormat::Float32x2,
+                    format: wgpu::VertexFormat::Float32x3,
                 },
             ],
         }

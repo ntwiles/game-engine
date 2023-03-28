@@ -85,7 +85,7 @@ impl State {
             }
         }
 
-        let ui_root = Resource::load_nml("debug.nml").unwrap();
+        let mut ui_root = Resource::load_nml("debug.nml").unwrap();
         ui_root.update(&mut graphics, cgmath::Vector2 { x: -1.0, y: 1.0 });
 
         let ui_canvas = canvas::Canvas::new(ui_root);

@@ -1,3 +1,4 @@
 <message>
     <nested>This will print on screen nested.</nested>
+    <two>ANOTHER MESSAGE</two>
 </message>

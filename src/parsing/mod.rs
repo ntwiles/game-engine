@@ -32,6 +32,7 @@ fn create_model(doc: Document) -> Result<Element, ()> {
         script_id: None,
         body: children,
         tag_name: "root".to_owned(),
+        height: 0.0,
     })
 }
 
@@ -71,5 +72,6 @@ fn create_element(node: Node, element_count: &mut usize) -> Result<Element, ()> 
         tag_name: node.tag_name().name().to_owned(),
         script_id: None,
         body: children,
+        height: 0.0,
     })
 }
