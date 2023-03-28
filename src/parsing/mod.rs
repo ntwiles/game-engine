@@ -1,8 +1,8 @@
-use std::{iter::Peekable, str::Chars};
+use roxmltree::{Children, Document, Node, NodeType};
 
 use crate::{
     resources::Resource,
-    ui::element::{Element, ElementBody},
+    ui::{element::Element, element_kind::ElementKind},
 };
 
 pub trait LoadNml {
@@ -13,75 +13,63 @@ impl LoadNml for Resource {
     fn load_nml(file_name: &str) -> anyhow::Result<Element, ()> {
         let path = Self::build_path(Some("ui"), file_name);
 
-        // TODO: Can/should this be done in an io stream instead of reading to a string?
         let source = std::fs::read_to_string(path).unwrap();
-        parse_nml(source)
+
+        let doc = roxmltree::Document::parse(&source).unwrap();
+
+        create_model(doc)
     }
 }
 
-fn parse_nml(source: String) -> Result<Element, ()> {
-    println!(".nml source: \n{source}");
+fn create_model(doc: Document) -> Result<Element, ()> {
+    // TODO: Ensure that root node exists and that there is only one.
+    let mut element_count = 1;
 
-    let mut stream = source.chars().peekable();
-    let mut count = 0;
+    let children = create_children(doc.root().children(), &mut element_count).unwrap();
 
-    if let Some(_) = stream.find(|char| *char == '<') {
-        Ok(parse_element(&mut stream, &mut count))
-    } else {
-        Err(())
-    }
-}
-
-fn capture_tag(stream: &mut Peekable<Chars>) -> String {
-    let mut tag = String::new();
-
-    while let Some(c) = stream.next() {
-        if c == '>' {
-            break;
-        }
-
-        if !c.is_whitespace() {
-            tag += &c.to_string();
-        }
-    }
-
-    tag
-}
-
-fn capture_body(stream: &mut Peekable<Chars>, count: &mut usize) -> ElementBody {
-    match stream.find(|c| !c.is_whitespace()) {
-        Some('<') => ElementBody::Child(Box::new(parse_element(stream, count))),
-        Some(first_char) => ElementBody::Content(capture_content(stream, first_char)),
-        None => todo!(),
-    }
-}
-
-fn capture_content(stream: &mut Peekable<Chars>, first_char: char) -> String {
-    let mut content = first_char.to_string();
-
-    while let Some(c) = stream.next() {
-        if c == '<' {
-            break;
-        }
-
-        content += &c.to_string();
-    }
-
-    content.trim().to_owned()
-}
-
-fn parse_element(stream: &mut Peekable<Chars>, count: &mut usize) -> Element {
-    let render_id = count.clone();
-    *count += 1;
-
-    let _ = capture_tag(stream);
-    let body = capture_body(stream, count);
-
-    let element = Element {
-        render_id,
+    Ok(Element {
+        render_id: 0,
         script_id: None,
-        body: Some(body),
-    };
+        body: children,
+        tag_name: "root".to_owned(),
+    })
+}
 
-    element
+fn create_children(doc: Children, element_count: &mut usize) -> Result<Vec<ElementKind>, ()> {
+    let children = doc.fold(Vec::new(), |mut acc, child| {
+        match child.node_type() {
+            NodeType::Element => {
+                acc.push(ElementKind::Element(
+                    create_element(child, element_count).unwrap(),
+                ));
+            }
+            NodeType::Text => {
+                let text = child.text().unwrap();
+
+                if text.trim().is_empty() {
+                    return acc;
+                }
+
+                acc.push(ElementKind::Content(text.to_owned()));
+            }
+            _ => todo!(),
+        }
+
+        acc
+    });
+
+    Ok(children)
+}
+
+fn create_element(node: Node, element_count: &mut usize) -> Result<Element, ()> {
+    let children = create_children(node.children(), element_count).unwrap();
+    let render_id = *element_count;
+    *element_count += 1;
+
+    Ok(Element {
+        render_id,
+        tag_name: node.tag_name().name().to_owned(),
+        script_id: None,
+        body: children,
+    })
 }

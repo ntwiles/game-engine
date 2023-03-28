@@ -17,6 +17,7 @@ winit = "0.27.1"
 wgpu = "0.14"
 wgpu_glyph = "0.18.0"
 dotenv = "0.15.0"
+roxmltree = "0.16.0"
 
 [build-dependencies]
 anyhow = "1.0"
