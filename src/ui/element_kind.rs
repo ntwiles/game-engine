@@ -11,9 +11,16 @@ pub enum ElementKind {
 }
 
 impl ElementKind {
-    pub fn update(&mut self, graphics: &mut Graphics, starting_position: Vector2<f32>) -> f32 {
+    pub fn update(
+        &mut self,
+        graphics: &mut Graphics,
+        starting_position: Vector2<f32>,
+        right_bound: f32,
+    ) -> f32 {
         match self {
-            ElementKind::Element(element) => element.update(graphics, starting_position),
+            ElementKind::Element(element) => {
+                element.update(graphics, starting_position, right_bound)
+            }
             ElementKind::Content(_text) => 0.1,
         }
     }

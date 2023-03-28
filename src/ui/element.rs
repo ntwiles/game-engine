@@ -1,4 +1,3 @@
-use cgmath::prelude::*;
 use wgpu::Color;
 use wgpu_glyph::{GlyphBrush, Section, Text};
 
@@ -26,11 +25,16 @@ impl Element {
         &mut self,
         graphics: &mut Graphics,
         starting_position: cgmath::Vector2<f32>,
+        right_bound: f32,
     ) -> f32 {
         let mut child_position = starting_position;
 
         let body_height = self.body.iter_mut().fold(0.0, |acc, child| {
-            let child_height = child.update(graphics, child_position + DEFAULT_PADDING);
+            let child_height = child.update(
+                graphics,
+                child_position + DEFAULT_PADDING,
+                right_bound - DEFAULT_PADDING.x,
+            );
             child_position.y -= child_height;
             acc + child_height
         });
@@ -42,7 +46,7 @@ impl Element {
             self.render_id, self.tag_name, self.body, body_height, height, self.body
         );
 
-        self.write_verts(graphics, starting_position, height);
+        self.write_verts(graphics, starting_position, height, right_bound);
 
         self.height = height;
         height
@@ -53,6 +57,7 @@ impl Element {
         graphics: &mut Graphics,
         starting_position: cgmath::Vector2<f32>,
         height: f32,
+        right_bound: f32,
     ) {
         let verts = [
             starting_position,
@@ -61,11 +66,11 @@ impl Element {
                 y: starting_position.y - height,
             },
             cgmath::Vector2 {
-                x: 1.0,
+                x: right_bound,
                 y: starting_position.y - height,
             },
             cgmath::Vector2 {
-                x: 1.0,
+                x: right_bound,
                 y: starting_position.y,
             },
         ];
@@ -74,8 +79,8 @@ impl Element {
             0 => Color::BLACK,
             1 => Color::RED,
             2 => Color::GREEN,
-            3 => Color::WHITE,
-            _ => Color::BLUE,
+            3 => Color::BLUE,
+            _ => Color::BLACK,
         };
 
         let render_verts = UiRenderVertex::new(&verts, color);
