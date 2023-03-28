@@ -34,7 +34,7 @@ pub struct State {
 }
 
 impl State {
-    pub async fn new(window: &Window) -> Self {
+    pub async fn new(window: &Window) -> Result<Self, anyhow::Error> {
         let size = window.inner_size();
 
         let camera = Camera {
@@ -85,12 +85,12 @@ impl State {
             }
         }
 
-        let mut ui_root = Resource::load_nml("debug.nml").unwrap();
+        let mut ui_root = Resource::load_nml("debug.nml")?;
         ui_root.update(&mut graphics, cgmath::Vector2 { x: -1.0, y: 1.0 }, 1.0);
 
         let ui_canvas = canvas::Canvas::new(ui_root);
 
-        State {
+        Ok(Self {
             camera,
             config: Config::new(),
             delta_time: 0.0,
@@ -103,7 +103,7 @@ impl State {
             last_n_ticks: LinkedList::new(),
             tick_queue_len: 15,
             ui_canvas,
-        }
+        })
     }
 
     pub fn resize(&mut self, new_size: winit::dpi::PhysicalSize<u32>) {

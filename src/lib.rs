@@ -31,7 +31,13 @@ pub async fn run() {
     let event_loop = EventLoop::new();
     let window = WindowBuilder::new().build(&event_loop).unwrap();
 
-    let mut state = state::State::new(&window).await;
+    let mut state = match state::State::new(&window).await {
+        Ok(state) => state,
+        Err(e) => {
+            eprintln!("Error creating state: {:?}", e);
+            return;
+        }
+    };
 
     let ball_texture = Resource::load_texture(&state.graphics, "ball.png")
         .await

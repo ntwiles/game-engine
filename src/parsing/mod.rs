@@ -6,26 +6,28 @@ use crate::{
 };
 
 pub trait LoadNml {
-    fn load_nml(path: &str) -> Result<Element, ()>;
+    fn load_nml(path: &str) -> Result<Element, anyhow::Error>;
 }
 
 impl LoadNml for Resource {
-    fn load_nml(file_name: &str) -> anyhow::Result<Element, ()> {
+    fn load_nml(file_name: &str) -> Result<Element, anyhow::Error> {
         let path = Self::build_path(Some("ui"), file_name);
 
-        let source = std::fs::read_to_string(path).unwrap();
+        let source = std::fs::read_to_string(path)?;
 
-        let doc = roxmltree::Document::parse(&source).unwrap();
+        let doc = roxmltree::Document::parse(&source)?;
 
         create_model(doc)
     }
 }
 
-fn create_model(doc: Document) -> Result<Element, ()> {
-    // TODO: Ensure that root node exists and that there is only one.
+fn create_model(doc: Document) -> Result<Element, anyhow::Error> {
     let mut element_count = 1;
 
-    let children = create_children(doc.root().children(), &mut element_count).unwrap();
+    // TODO: Ensure that root node exists and that there is only one.
+    let root = doc.root().first_child().unwrap();
+
+    let children = create_children(root.children(), &mut element_count).unwrap();
 
     Ok(Element {
         render_id: 0,
@@ -45,9 +47,9 @@ fn create_children(doc: Children, element_count: &mut usize) -> Result<Vec<Eleme
                 ));
             }
             NodeType::Text => {
-                let text = child.text().unwrap();
+                let text = child.text().unwrap().trim();
 
-                if text.trim().is_empty() {
+                if text.is_empty() {
                     return acc;
                 }
 

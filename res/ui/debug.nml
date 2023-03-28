@@ -1,4 +1,7 @@
-<message>
-    <nested>This will print on screen nested.</nested>
+<root>
+    <nested>
+        <poopy>This will print on screen nested.</poopy>
+        Hello there.
+    </nested>
     <two>ANOTHER MESSAGE</two>
-</message>
+</root>
