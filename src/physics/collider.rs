@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+// TODO: Remove this ^ when we re-implement collision detection.
 pub struct Collider {
     pub origin: cgmath::Vector2<f32>,
     pub width: f32,

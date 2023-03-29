@@ -1,0 +1,23 @@
+{
+    "root": {
+        "background_color": "#33ccff"
+    },
+    "body": {
+        "background_color": "#eeeeee"
+    },
+    "warning": {
+        "background_color": "#eebb88",
+        "color": "#aa4433"
+    },
+    "invisible": {
+        "background_color": "#eeeeee"
+    },
+    "sidebar": {
+        "background_color": "#ffffff",
+        "color": "#777777"
+    },
+    "footer": {
+        "background_color": "#bbeeff",
+        "color": "#3366aa"
+    }
+}

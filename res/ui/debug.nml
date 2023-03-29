@@ -1,7 +1,9 @@
 <root>
-    <nested>
-        <poopy>This will print on screen nested.</poopy>
-        Hello there.
-    </nested>
-    <two>ANOTHER MESSAGE</two>
+    <body>
+        <warning>This is a kind of warning message.</warning>
+        <invisible></invisible>
+        This is the main content!
+        <sidebar>This is some sub-content.</sidebar>
+    </body>
+    <footer>This is a footer.</footer>
 </root>

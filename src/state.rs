@@ -1,4 +1,7 @@
-use std::{collections::LinkedList, time::Instant};
+use std::{
+    collections::{HashMap, LinkedList},
+    time::Instant,
+};
 
 use cgmath::{prelude::*, Quaternion};
 use winit::window::Window;
@@ -13,9 +16,9 @@ use crate::{
         vertex, Graphics,
     },
     input,
-    parsing::LoadNml,
+    parsing::{nml::LoadNml, styles::LoadStyles},
     resources::Resource,
-    ui::canvas,
+    ui::{canvas, style::Style},
 };
 
 pub struct State {
@@ -31,6 +34,7 @@ pub struct State {
     last_n_ticks: LinkedList<f64>,
     tick_queue_len: usize,
     ui_canvas: canvas::Canvas,
+    styles: HashMap<String, Style>,
 }
 
 impl State {
@@ -86,7 +90,14 @@ impl State {
         }
 
         let mut ui_root = Resource::load_nml("debug.nml")?;
-        ui_root.update(&mut graphics, cgmath::Vector2 { x: -1.0, y: 1.0 }, 1.0);
+        let styles = Resource::load_styles("debug.json")?;
+
+        ui_root.update(
+            &mut graphics,
+            cgmath::Vector2 { x: -1.0, y: 1.0 },
+            1.0,
+            &styles,
+        );
 
         let ui_canvas = canvas::Canvas::new(ui_root);
 
@@ -103,6 +114,7 @@ impl State {
             last_n_ticks: LinkedList::new(),
             tick_queue_len: 15,
             ui_canvas,
+            styles,
         })
     }
 
@@ -149,6 +161,7 @@ impl State {
             &self.materials,
             &mut self.ui_canvas,
             &self.config,
+            &self.styles,
         )
     }
 

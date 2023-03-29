@@ -18,7 +18,7 @@ use crate::{
     config::Config,
     entity,
     resources::Resource,
-    ui::{canvas::Canvas, element::DrawElement, ui_vertex::UiRenderVertex},
+    ui::{canvas::Canvas, element::DrawElement, style::Style, ui_vertex::UiRenderVertex},
 };
 
 use self::pipeline::{create_sprite_render_pipeline, create_ui_render_pipeline};
@@ -254,6 +254,7 @@ impl Graphics {
         materials: &Vec<material::Material>,
         ui_canvas: &mut Canvas,
         config: &Config,
+        styles: &HashMap<String, Style>,
     ) -> Result<(), wgpu::SurfaceError> {
         let output = self.surface.get_current_texture()?;
 
@@ -320,6 +321,7 @@ impl Graphics {
                     y: self.surface_config.height as f32,
                 },
                 cgmath::Vector2::zero(),
+                styles,
             );
         }
 
